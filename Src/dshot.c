@@ -39,6 +39,9 @@ uint32_t gcr[37] = { 0 };
 uint16_t dshot_frametime;
 uint16_t dshot_goodcounts;
 uint16_t dshot_badcounts;
+extern uint32_t average_signal_pulse;
+extern uint8_t average_count;
+extern uint32_t average_packet_length;
 char dshot_extended_telemetry = 0;
 uint16_t send_extended_dshot = 0;
 uint16_t processtime = 0;
@@ -53,7 +56,6 @@ void computeDshotDMA()
     dshot_frametime = dma_buffer[31] - dma_buffer[0];
     halfpulsetime = dshot_frametime >> 5;
     if ((dshot_frametime > dshot_frametime_low) && (dshot_frametime < dshot_frametime_high)) {
-			signaltimeout = 0;
         for (int i = 0; i < 16; i++) {
             // note that dma_buffer[] is uint32_t, we cast the difference to uint16_t to handle
             // timer wrap correctly
@@ -82,6 +84,17 @@ void computeDshotDMA()
 
         if (calcCRC == checkCRC) {
             signaltimeout = 0;
+            dshot_badcounts = 0;
+
+            if (average_count < 8 && !armed && zero_input_count > 5) {
+                average_count++;
+                average_packet_length = average_packet_length + (dma_buffer[31] - dma_buffer[0]);
+                if (average_count == 8) {
+                    dshot_frametime_high = (average_packet_length >> 3) + (average_packet_length >> 7);
+                    dshot_frametime_low = (average_packet_length >> 3) - (average_packet_length >> 7);
+                }
+            }
+
             dshot_goodcounts++;
             if (dpulse[11] == 1) {
                 send_telemetry = 1;
@@ -216,6 +229,9 @@ void computeDshotDMA()
             dshot_badcounts++;
             programming_mode = 0;
         }
+    }
+    else {
+        dshot_badcounts++;
     }
 }
 

@@ -162,14 +162,6 @@ void transfercomplete()
             }
         }
         if (!armed) {
-            if (dshot && (average_count < 8) && (zero_input_count > 5)) {
-                average_count++;
-                average_packet_length = average_packet_length + (dma_buffer[31] - dma_buffer[0]);
-                if (average_count == 8) {
-                    dshot_frametime_high = (average_packet_length >> 3) + (average_packet_length >> 7);
-                    dshot_frametime_low = (average_packet_length >> 3) - (average_packet_length >> 7);
-                }
-            }
             if (adjusted_input == 0 && calibration_required == 0) { // note this in input..not newinput so it
                                                                     // will be adjusted be main loop
                 zero_input_count++;
