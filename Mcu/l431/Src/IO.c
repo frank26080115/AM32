@@ -40,13 +40,13 @@ void receiveDshotDma()
     DMA1_Channel4->CMAR = (uint32_t)&dma_buffer;
     DMA1_Channel4->CPAR = (uint32_t)&IC_TIMER_REGISTER->CCR1;
     DMA1_Channel4->CNDTR = buffersize;
-    DMA1_Channel4->CCR = 0x98b;
+    DMA1_Channel4->CCR = 0x98B | (buffersize == 64 ? (DMA_CCR_CIRC | DMA_CCR_HTIE) : 0);
 #endif
 #ifdef USE_TIMER_15_CHANNEL_1
     DMA1_Channel5->CMAR = (uint32_t)&dma_buffer;
     DMA1_Channel5->CPAR = (uint32_t)&IC_TIMER_REGISTER->CCR1;
     DMA1_Channel5->CNDTR = buffersize;
-    DMA1_Channel5->CCR = 0x98b;
+    DMA1_Channel5->CCR = 0x98B | (buffersize == 64 ? (DMA_CCR_CIRC | DMA_CCR_HTIE) : 0);
 #endif
     IC_TIMER_REGISTER->DIER |= TIM_DIER_CC1DE;
     IC_TIMER_REGISTER->CCER |= IC_TIMER_CHANNEL;

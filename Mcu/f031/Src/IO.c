@@ -180,6 +180,14 @@ void receiveDshotDma()
         LL_DMA_GetDataTransferDirection(DMA1, INPUT_DMA_CHANNEL));
 #endif
     LL_DMA_SetDataLength(DMA1, INPUT_DMA_CHANNEL, buffersize);
+    if (buffersize == 64) {
+        LL_DMA_SetMode(DMA1, INPUT_DMA_CHANNEL, LL_DMA_MODE_CIRCULAR);
+        LL_DMA_EnableIT_HT(DMA1, INPUT_DMA_CHANNEL);
+    }
+    else {
+        LL_DMA_SetMode(DMA1, INPUT_DMA_CHANNEL, LL_DMA_MODE_NORMAL);
+        LL_DMA_DisableIT_HT(DMA1, INPUT_DMA_CHANNEL);
+    }
     LL_DMA_EnableIT_TC(DMA1, INPUT_DMA_CHANNEL);
     LL_DMA_EnableIT_TE(DMA1, INPUT_DMA_CHANNEL);
     LL_DMA_EnableChannel(DMA1, INPUT_DMA_CHANNEL);

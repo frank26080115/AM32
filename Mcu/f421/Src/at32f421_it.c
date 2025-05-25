@@ -9,7 +9,7 @@
 #include "comparator.h"
 
 
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
 extern void doPWMChanges();
@@ -124,10 +124,10 @@ void DMA1_Channel1_IRQHandler(void)
 void DMA1_Channel5_4_IRQHandler(void)
 {
 #ifdef USE_TIMER_15_CHANNEL_1
-    if (dshot) {
+    if (dshot == 1) {
         DMA1->clr = DMA1_GL5_FLAG;
         INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
-        transfercomplete();
+        transfercomplete(0);
         EXINT->swtrg = EXINT_LINE_15;
         return;
     }
@@ -137,11 +137,16 @@ void DMA1_Channel5_4_IRQHandler(void)
     //            DMA1->clr = DMA1_HDT5_FLAG;
     //        }
     //    }
-
+    if (dma_flag_get(DMA1_HDT5_FLAG) == SET) {
+        if (dshot == 2) {
+            DMA1->clr = DMA1_HDT5_FLAG;
+            transfercomplete(1);
+        }
+    }
     if (dma_flag_get(DMA1_FDT5_FLAG) == SET) {
         DMA1->clr = DMA1_GL5_FLAG;
         INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
-        transfercomplete();
+        transfercomplete(0);
         EXINT->swtrg = EXINT_LINE_15;
     }
     if (dma_flag_get(DMA1_DTERR5_FLAG) == SET) {
@@ -149,10 +154,10 @@ void DMA1_Channel5_4_IRQHandler(void)
     }
 #endif
 #ifdef USE_TIMER_3_CHANNEL_1
-    if (dshot) {
+    if (dshot == 1) {
         DMA1->clr = DMA1_GL4_FLAG;
         INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
-        transfercomplete();
+        transfercomplete(0);
         EXINT->swtrg = EXINT_LINE_15;
         return;
     }
@@ -161,11 +166,15 @@ void DMA1_Channel5_4_IRQHandler(void)
             IC_TIMER_REGISTER->cctrl_bit.c1p = TMR_INPUT_FALLING_EDGE;
             DMA1->clr = DMA1_HDT4_FLAG;
         }
+        else if (dshot == 2) {
+            DMA1->clr = DMA1_HDT4_FLAG;
+            transfercomplete(1);
+        }
     }
     if (dma_flag_get(DMA1_FDT4_FLAG) == SET) {
         DMA1->clr = DMA1_GL4_FLAG;
         INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
-        transfercomplete();
+        transfercomplete(0);
         EXINT->swtrg = EXINT_LINE_15;
     }
     if (dma_flag_get(DMA1_DTERR4_FLAG) == SET) {

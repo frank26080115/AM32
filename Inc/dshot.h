@@ -10,7 +10,7 @@
 #ifndef INC_DSHOT_H_
 #define INC_DSHOT_H_
 
-void computeDshotDMA(void);
+void computeDshotDMA(char is_half);
 void make_dshot_package(uint16_t com_time);
 
 extern void playInputTune(void);

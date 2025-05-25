@@ -54,7 +54,7 @@
 /* USER CODE BEGIN PV */
 extern void sendDshotDma(void);
 extern void receiveDshotDma(void);
-extern void transfercomplete(void);
+extern void transfercomplete(char is_half);
 extern void interruptRoutine();
 extern void PeriodElapsedCallback();
 extern void tenKhzRoutine();
@@ -176,12 +176,16 @@ void DMA1_Channel2_3_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT3(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT3(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC3(DMA1) == 1) {
         LL_DMA_ClearFlag_GI3(DMA1);
 
         LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_3);
-        transfercomplete();
+        transfercomplete(0);
         input_ready = 1;
     } else if (LL_DMA_IsActiveFlag_TE3(DMA1) == 1) {
         LL_DMA_ClearFlag_GI3(DMA1);
@@ -232,13 +236,17 @@ void DMA1_Channel4_5_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT4(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT4(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC4(DMA1) == 1) {
         LL_DMA_ClearFlag_GI4(DMA1);
 
         LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
 
-        transfercomplete();
+        transfercomplete(0);
     } else if (LL_DMA_IsActiveFlag_TE4(DMA1) == 1) {
         LL_DMA_ClearFlag_GI4(DMA1);
     }
@@ -250,13 +258,17 @@ void DMA1_Channel4_5_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT5(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT5(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC5(DMA1) == 1) {
         LL_DMA_ClearFlag_GI5(DMA1);
 
         LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_5);
 
-        transfercomplete();
+        transfercomplete(0);
     } else if (LL_DMA_IsActiveFlag_TE5(DMA1) == 1) {
         LL_DMA_ClearFlag_GI5(DMA1);
     }
@@ -381,13 +393,17 @@ void DMA1_Channel1_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT1(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT1(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC1(DMA1) == 1) {
         LL_DMA_ClearFlag_GI1(DMA1);
 
         LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1);
 
-        transfercomplete();
+        transfercomplete(0);
         input_ready = 1;
     } else if (LL_DMA_IsActiveFlag_TE1(DMA1) == 1) {
         LL_DMA_ClearFlag_GI1(DMA1);

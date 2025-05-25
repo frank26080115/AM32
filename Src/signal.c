@@ -30,6 +30,7 @@ uint8_t average_count;
 uint32_t average_packet_length;
 uint16_t dshot_frametime_high = 50000;
 uint16_t dshot_frametime_low = 0;
+extern uint16_t dshot_frametime;
 
 void computeMSInput()
 {
@@ -115,7 +116,7 @@ void computeServoInput()
     }
 }
 
-void transfercomplete()
+void transfercomplete(char is_half)
 {
     if (armed && dshot_telemetry) {
         if (out_put) {
@@ -138,7 +139,7 @@ void transfercomplete()
         if (dshot_telemetry) {
             if (out_put) {
                 make_dshot_package(e_com_time);
-                computeDshotDMA();
+                computeDshotDMA(0);
                 receiveDshotDma();
                 return;
             } else {
@@ -147,9 +148,11 @@ void transfercomplete()
             }
         } else {
 
-            if (dshot == 1) {
-                computeDshotDMA();
-                receiveDshotDma();
+            if (dshot) {
+                computeDshotDMA(is_half);
+                if (dshot == 1) {
+                    receiveDshotDma();
+                }
             }
             if (servoPwm == 1) {
                 if (getInputPinState()) {
@@ -162,9 +165,9 @@ void transfercomplete()
             }
         }
         if (!armed) {
-            if (dshot && (average_count < 8) && (zero_input_count > 5)) {
+            if (dshot && dshot_frametime > 0 && (average_count < 8) && (zero_input_count > 5)) {
                 average_count++;
-                average_packet_length = average_packet_length + (dma_buffer[31] - dma_buffer[0]);
+                average_packet_length = average_packet_length + dshot_frametime;
                 if (average_count == 8) {
                     dshot_frametime_high = (average_packet_length >> 3) + (average_packet_length >> 7);
                     dshot_frametime_low = (average_packet_length >> 3) - (average_packet_length >> 7);
@@ -248,10 +251,10 @@ void detectInput()
     }
     average_signal_pulse = average_signal_pulse / 32;
 
-    if (dshot == 1) {
+    if (dshot) {
         checkDshot();
     }
-    if (servoPwm == 1) {
+    if (servoPwm) {
         checkServo();
     }
 

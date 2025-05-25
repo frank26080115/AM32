@@ -15,7 +15,7 @@
 #include "targets.h"
 #include "common.h"
 #include "comparator.h"
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
 extern void doPWMChanges();
@@ -106,16 +106,18 @@ void DMA1_Channel5_IRQHandler(void)
 {
     if(DMA1->INTFR & DMA1_IT_HT5) 
     {
-        if(servoPwm)
-        {
+        if(servoPwm) {
             IC_TIMER_REGISTER->CCER = 0x03;  
+        }
+        else if (dshot == 2) {
+            transfercomplete(1);
         }
         DMA1->INTFCR = DMA1_IT_HT5;
     }
     if( DMA1->INTFR & DMA1_IT_TC5)
     {
         CLEAR_BIT(INPUT_DMA_CHANNEL->CFGR,0x1);  //disable DMA1_CH5
-        transfercomplete();
+        transfercomplete(0);
         DMA1->INTFCR = DMA1_IT_TC5;
         input_ready = 1;
     }
@@ -124,7 +126,7 @@ void DMA1_Channel5_IRQHandler(void)
     {
         CLEAR_BIT(INPUT_DMA_CHANNEL->CFGR,0x1);  //disable DMA1_CH5
         DMA_ClearFlag(DMA1_IT_TE5);
-        transfercomplete( );
+        transfercomplete(0);
         input_ready = 1;
     }
 }

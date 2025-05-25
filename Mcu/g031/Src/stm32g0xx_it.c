@@ -74,7 +74,7 @@
  * --------------------------------------------------------*/
 
 /* USER CODE BEGIN EV */
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
 extern void tenKhzRoutine();
@@ -193,11 +193,15 @@ void DMA1_Channel1_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT1(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT1(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC1(DMA1) == 1) {
         DMA1->IFCR |= DMA_IFCR_CGIF1;
         DMA1_Channel1->CCR = 0x00;
-        transfercomplete();
+        transfercomplete(0);
         EXTI->SWIER1 |= LL_EXTI_LINE_3;
     } else if (LL_DMA_IsActiveFlag_TE1(DMA1) == 1) {
         LL_DMA_ClearFlag_GI1(DMA1);

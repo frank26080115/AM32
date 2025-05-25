@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
 extern void doPWMChanges();
@@ -91,11 +91,15 @@ void DMA_Channel3_4_IRQHandler(void)
             TIMER_CHCTL2(TIMER2) |= (uint32_t)(TIMER_IC_POLARITY_FALLING);
             dma_interrupt_flag_clear(INPUT_DMA_CHANNEL, DMA_INT_FLAG_HTF);
         }
+        else if (dshot == 2) {
+            transfercomplete(1);
+            dma_interrupt_flag_clear(INPUT_DMA_CHANNEL, DMA_INT_FLAG_HTF);
+        }
     }
     if (dma_interrupt_flag_get(INPUT_DMA_CHANNEL, DMA_INT_FLAG_FTF) == 1) {
         dma_interrupt_flag_clear(INPUT_DMA_CHANNEL, DMA_INT_FLAG_G);
         dma_channel_disable(INPUT_DMA_CHANNEL);
-        transfercomplete();
+        transfercomplete(0);
         EXTI_SWIEV |= (uint32_t)EXTI_15;
     } else if (dma_interrupt_flag_get(INPUT_DMA_CHANNEL, DMA_INT_FLAG_ERR) == 1) {
         dma_interrupt_flag_clear(INPUT_DMA_CHANNEL, DMA_INT_FLAG_G);

@@ -28,7 +28,7 @@
 #include "targets.h"
 #include "common.h"
 
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
 extern void doPWMChanges();
@@ -125,11 +125,15 @@ void DMA1_Channel4_5_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT5(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT5(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC5(DMA1) == 1) {
         LL_DMA_ClearFlag_GI5(DMA1);
         LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_5);
-        transfercomplete();
+        transfercomplete(0);
         EXTI->SWIER |= LL_EXTI_LINE_15;
         return;
     } else if (LL_DMA_IsActiveFlag_TE5(DMA1) == 1) {
@@ -173,11 +177,15 @@ void DMA1_Channel4_5_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT4(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT4(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC4(DMA1) == 1) {
         LL_DMA_ClearFlag_GI4(DMA1);
         LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
-        transfercomplete();
+        transfercomplete(0);
         EXTI->SWIER |= LL_EXTI_LINE_15;
     } else if (LL_DMA_IsActiveFlag_TE4(DMA1) == 1) {
         LL_DMA_ClearFlag_GI4(DMA1);

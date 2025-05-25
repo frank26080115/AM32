@@ -1426,7 +1426,7 @@ void tenKhzRoutine()
 void processDshot()
 {
     if (compute_dshot_flag == 1) {
-        computeDshotDMA();
+        computeDshotDMA(0);
         compute_dshot_flag = 0;
     }
     if (compute_dshot_flag == 2) {

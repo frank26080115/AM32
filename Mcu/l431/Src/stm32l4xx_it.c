@@ -27,7 +27,7 @@
 //#include "WS2812.h"
 
 
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
 extern void tenKhzRoutine();
@@ -241,13 +241,18 @@ void DMA1_Channel5_IRQHandler(void)
                 LL_TIM_IC_POLARITY_FALLING);
             LL_DMA_ClearFlag_HT5(DMA1);
         }
+        else if (dshot == 2) {
+            LL_DMA_ClearFlag_HT5(DMA1);
+            transfercomplete(1);
+        }
     }
     if (LL_DMA_IsActiveFlag_TC5(DMA1) == 1) {
         DMA1->IFCR |= DMA_IFCR_CGIF5;
         DMA1_Channel5->CCR = 0x00;
-        transfercomplete();
+        transfercomplete(0);
         EXTI->SWIER1 |= LL_EXTI_LINE_15;
-    } else if (LL_DMA_IsActiveFlag_TE5(DMA1) == 1) {
+    }
+    else if (LL_DMA_IsActiveFlag_TE5(DMA1) == 1) {
         LL_DMA_ClearFlag_GI5(DMA1);
     }
 }

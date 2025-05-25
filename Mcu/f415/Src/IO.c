@@ -73,7 +73,7 @@ void receiveDshotDma()
 	INPUT_DMA_CHANNEL->maddr = (uint32_t)&dma_buffer;
     INPUT_DMA_CHANNEL->dtcnt = buffersize;
 	IC_TIMER_REGISTER->ctrl1_bit.tmren = TRUE;
-    INPUT_DMA_CHANNEL->ctrl = 0x0000098b;
+    INPUT_DMA_CHANNEL->ctrl = 0x0000098B | ((buffersize == 64) ? ((1 << 5) | (1 << 2)) : 0);
 }
 
 void sendDshotDma()

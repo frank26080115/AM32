@@ -38,7 +38,7 @@ void receiveDshotDma()
     TIMER_DMAINTEN(IC_TIMER_REGISTER) |= (uint32_t)TIMER_DMA_CH0D;
     TIMER_CHCTL2(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CCX_ENABLE;
     TIMER_CTL0(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CTL0_CEN;
-    DMA_CHCTL(INPUT_DMA_CHANNEL) = 0x0000098b; // just set the whole reg in one go to enable
+    DMA_CHCTL(INPUT_DMA_CHANNEL) = 0x0000098B | ((buffersize == 64) ? (DMA_CHXCTL_CMEN | DMA_CHXCTL_HTFIE) : 0); // just set the whole reg in one go to enable
 }
 
 void sendDshotDma()

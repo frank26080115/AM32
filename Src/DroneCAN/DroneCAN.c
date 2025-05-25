@@ -572,7 +572,7 @@ static void handle_GetNodeInfo(CanardInstance *ins, CanardRxTransfer *transfer)
                            total_size);
 }
 
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void setInput();
 
 
@@ -597,7 +597,7 @@ static void set_input(uint16_t input)
     // we must set dshot for bi_direction to work
     dshot = eepromBuffer.bi_direction;
 
-    transfercomplete();
+    transfercomplete(0);
     setInput();
 
     canstats.num_input++;

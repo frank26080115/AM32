@@ -15,7 +15,7 @@
 #include "DroneCAN/DroneCAN.h"
 #endif
 
-int dpulse[16] = { 0 };
+static int dpulse[16] = { 0 };
 
 const char gcr_encode_table[16] = {
     0b11001, 0b11011, 0b10010, 0b10011, 0b11101, 0b10101, 0b10110, 0b10111,
@@ -34,7 +34,8 @@ extern char play_tone_flag;
 extern char send_esc_info_flag;
 uint8_t command_count = 0;
 uint8_t last_command = 0;
-uint8_t high_pin_count = 0;
+static uint8_t high_pin_count = 0;
+static uint8_t low_pin_count = 0;
 uint32_t gcr[37] = { 0 };
 uint16_t dshot_frametime;
 uint16_t dshot_goodcounts;
@@ -48,174 +49,222 @@ uint8_t programming_mode;
 uint16_t position;
 uint8_t  new_byte;
 
-void computeDshotDMA()
+void computeDshotDMA(char is_half)
 {
-    dshot_frametime = dma_buffer[31] - dma_buffer[0];
-    halfpulsetime = dshot_frametime >> 5;
-    if ((dshot_frametime > dshot_frametime_low) && (dshot_frametime < dshot_frametime_high)) {
-			signaltimeout = 0;
-        for (int i = 0; i < 16; i++) {
-            // note that dma_buffer[] is uint32_t, we cast the difference to uint16_t to handle
-            // timer wrap correctly
-            const uint16_t pdiff = dma_buffer[(i << 1) + 1] - dma_buffer[(i << 1)];
-            dpulse[i] = (pdiff > halfpulsetime);
+    int tail_idx = is_half ? 31 : 63;
+    char frm_time_passed = 0;
+    char crc_passed = 0;
+    uint16_t frame_time = 0; // must be 16 bit to handle timer wrap correctly
+    uint32_t tocheck;
+    dshot_frametime = 0; // 0 signals "not valid" to the code that averages the frame times
+    int tries;
+    for (tries = 0; tries < 16; tries++)
+    {
+        int j, k;
+        j = tail_idx - tries;
+        k = tail_idx - tries - 32;
+        j = (j + 64) % 64; // handle underflow roll-over
+        k = (k + 64) % 64; // handle underflow roll-over
+        frame_time = dma_buffer[j] - dma_buffer[k];
+        if ((frame_time > dshot_frametime_low) && (frame_time < dshot_frametime_high)) {
+            frm_time_passed = 1;
+            halfpulsetime = dshot_frametime >> 5;
+            for (int i = 0; i < 16; i++) {
+                // note that dma_buffer[] is uint32_t, we cast the difference to uint16_t to handle
+                // timer wrap correctly
+                j = (i * 2) - tries;
+                j += is_half ? 0 : 32; // start at half way point if the second portion of the buffer is filled
+                k = j + 1;
+                j = (j + 64) % 64; // handle underflow roll-over
+                k = (k + 64) % 64; // handle underflow roll-over
+                const uint16_t pdiff = dma_buffer[k] - dma_buffer[j];
+                dpulse[i] = (pdiff > halfpulsetime);
+            }
+            uint8_t calcCRC = ((dpulse[0] ^ dpulse[4] ^ dpulse[8]) << 3 | (dpulse[1] ^ dpulse[5] ^ dpulse[9]) << 2 | (dpulse[2] ^ dpulse[6] ^ dpulse[10]) << 1 | (dpulse[3] ^ dpulse[7] ^ dpulse[11]));
+            uint8_t checkCRC = (dpulse[12] << 3 | dpulse[13] << 2 | dpulse[14] << 1 | dpulse[15]);
+
+            if (dshot_telemetry) {
+                checkCRC = ~checkCRC + 16;
+            }
+
+            tocheck = (dpulse[0] << 10 | dpulse[1] << 9 | dpulse[2] << 8 | dpulse[3] << 7 | dpulse[4] << 6 | dpulse[5] << 5 | dpulse[6] << 4 | dpulse[7] << 3 | dpulse[8] << 2 | dpulse[9] << 1 | dpulse[10]);
+            if (calcCRC == checkCRC) {
+                crc_passed = 1;
+                break;
+            }
         }
-        uint8_t calcCRC = ((dpulse[0] ^ dpulse[4] ^ dpulse[8]) << 3 | (dpulse[1] ^ dpulse[5] ^ dpulse[9]) << 2 | (dpulse[2] ^ dpulse[6] ^ dpulse[10]) << 1 | (dpulse[3] ^ dpulse[7] ^ dpulse[11]));
-        uint8_t checkCRC = (dpulse[12] << 3 | dpulse[13] << 2 | dpulse[14] << 1 | dpulse[15]);
+    }
 
-        if (!armed) {
-            if (dshot_telemetry == 0) {
-                if (getInputPinState()) { // if the pin is high for 100 checks between
-                                          // signal pulses its inverted
-                    high_pin_count++;
-                    if (high_pin_count > 100) {
-                        dshot_telemetry = 1;
-                    }
+    if (frm_time_passed) {
+        dshot_frametime = frame_time;
+        //signaltimeout = 0;
+        if (dshot_telemetry == 0) {
+            if (getInputPinState()) { // if the pin is high for 100 checks between
+                                        // signal pulses its inverted
+                high_pin_count++;
+                low_pin_count = 0;
+                if (high_pin_count > 100 && !armed) {
+                    dshot_telemetry = 1;
+                }
+            }
+            else {
+                if (low_pin_count > 100 && dshot != 0)  {
+                    // we are certain that telemetry is not used
+                    // change these variables so that the rest of the code, especially receiveDshotDma, is aware that we are going into the double buffered circular mode
+                    buffersize = 64;
+                    dshot = 2;
+                    receiveDshotDma(); // restart the DMA with new settings, receiveDshotDma won't be called again after that
+                }
+                else {
+                    low_pin_count++;
+                }
+                // don't let the high_pin_count accumulate slowly for no good reason (only glitches)
+                if (low_pin_count > 32)  {
+                    high_pin_count = 0;
                 }
             }
         }
-        if (dshot_telemetry) {
-            checkCRC = ~checkCRC + 16;
+        else if (dshot != 0) {
+            buffersize = 32;
+            dshot = 1;
         }
+    }
 
-        int tocheck = (dpulse[0] << 10 | dpulse[1] << 9 | dpulse[2] << 8 | dpulse[3] << 7 | dpulse[4] << 6 | dpulse[5] << 5 | dpulse[6] << 4 | dpulse[7] << 3 | dpulse[8] << 2 | dpulse[9] << 1 | dpulse[10]);
-
-        if (calcCRC == checkCRC) {
-            signaltimeout = 0;
-            dshot_goodcounts++;
-            if (dpulse[11] == 1) {
-                send_telemetry = 1;
+    if (crc_passed) {
+        signaltimeout = 0;
+        dshot_goodcounts++;
+        if (dpulse[11] == 1) {
+            send_telemetry = 1;
+        }
+        if(programming_mode > 0){  
+            if(programming_mode == 1){ // begin programming mode
+                position = tocheck;    // eepromBuffer position
+                programming_mode = 2;
+                return;
             }
-            if(programming_mode > 0){  
-                if(programming_mode == 1){ // begin programming mode
-                    position = tocheck;    // eepromBuffer position
-                    programming_mode = 2;
-                    return;
-                }
-               if(programming_mode == 2){
-                    new_byte = tocheck;   // new value of setting
-                    programming_mode = 3;
-                    return;
-                }
-                if(programming_mode == 3){
-                    if(tocheck == 37){  // commit new values to eeprom. must use save settings to make permanent.
-                    eepromBuffer.buffer[position] = new_byte;
-                    programming_mode = 0;
-                  }
-                }
-                return; // don't process dshot signal when in programming mode
+            if(programming_mode == 2){
+                new_byte = tocheck;   // new value of setting
+                programming_mode = 3;
+                return;
             }
-            if (tocheck > 47) {
-                if (EDT_ARMED) {
-                    newinput = tocheck;
-                    dshotcommand = 0;
-                    command_count = 0;
-                    return;
+            if(programming_mode == 3){
+                if(tocheck == 37){  // commit new values to eeprom. must use save settings to make permanent.
+                eepromBuffer.buffer[position] = new_byte;
+                programming_mode = 0;
                 }
             }
-
-            if ((tocheck <= 47) && (tocheck > 0)) {
-                newinput = 0;
-                dshotcommand = tocheck; //  todo
-            }
-            if (tocheck == 0) {
-                if (EDT_ARM_ENABLE == 1) {
-                    EDT_ARMED = 0;
-                }
-#if DRONECAN_SUPPORT
-                if (DroneCAN_active()) {
-                    // allow DroneCAN to override DShot input
-                    return;
-                }
-#endif
-                newinput = 0;
+            return; // don't process dshot signal when in programming mode
+        }
+        if (tocheck > 47) {
+            if (EDT_ARMED) {
+                newinput = tocheck;
                 dshotcommand = 0;
                 command_count = 0;
+                return;
             }
-
-            if ((dshotcommand > 0) && (running == 0) && armed) {
-                if (dshotcommand != last_command) {
-                    last_command = dshotcommand;
-                    command_count = 0;
-                }
-                if (dshotcommand < 5) { // beacons
-                    command_count = 6; // go on right away
-                }
-                command_count++;
-                if (command_count >= 6) {
-                    command_count = 0;
-                    switch (dshotcommand) { // todo
-
-                    case 1:
-                        play_tone_flag = 1;
-                        break;
-                    case 2:
-                        play_tone_flag = 2;
-                        break;
-                    case 3:
-                        play_tone_flag = 3;
-                        break;
-                    case 4:
-                        play_tone_flag = 4;
-                        break;
-                    case 5:
-                        play_tone_flag = 5;
-                        break;
-                    case 6:
-                        send_esc_info_flag = 1;
-                        break;
-                    case 7:
-                        eepromBuffer.dir_reversed = 0;
-                        forward = 1 - eepromBuffer.dir_reversed;
-                        //	play_tone_flag = 1;
-                        break;
-                    case 8:
-                        eepromBuffer.dir_reversed = 1;
-                        forward = 1 - eepromBuffer.dir_reversed;
-                        //	play_tone_flag = 2;
-                        break;
-                    case 9:
-                        eepromBuffer.bi_direction = 0;
-                        break;
-                    case 10:
-                        eepromBuffer.bi_direction = 1;
-                        break;
-                    case 12:
-                        saveEEpromSettings();
-                        play_tone_flag = 1 + eepromBuffer.dir_reversed;
-                        //	NVIC_SystemReset();
-                        break;
-                    case 13:
-                        dshot_extended_telemetry = 1;
-                        send_extended_dshot = 0b111000000000;
-                        if (EDT_ARM_ENABLE == 1) {
-                            EDT_ARMED = 1;
-                        }
-                        break;
-                    case 14:
-                        dshot_extended_telemetry = 0;
-                        send_extended_dshot = 0b111011111111;
-                        //	make_dshot_package();
-                        break;
-                    case 20:
-                        forward = 1 - eepromBuffer.dir_reversed;
-                        break;
-                    case 21:
-                        forward = eepromBuffer.dir_reversed;
-                        break;
-                    case 36:
-                        programming_mode = 1;
-              //          armed = 0;           // disarm when entering programming mode
-                        break;
-                    }
-                    last_dshot_command = dshotcommand;
-                    dshotcommand = 0;
-                }
-            }
-        } else {
-            dshot_badcounts++;
-            programming_mode = 0;
         }
+
+        if ((tocheck <= 47) && (tocheck > 0)) {
+            newinput = 0;
+            dshotcommand = tocheck; //  todo
+        }
+        if (tocheck == 0) {
+            if (EDT_ARM_ENABLE == 1) {
+                EDT_ARMED = 0;
+            }
+#if DRONECAN_SUPPORT
+            if (DroneCAN_active()) {
+                // allow DroneCAN to override DShot input
+                return;
+            }
+#endif
+            newinput = 0;
+            dshotcommand = 0;
+            command_count = 0;
+        }
+
+        if ((dshotcommand > 0) && (running == 0) && armed) {
+            if (dshotcommand != last_command) {
+                last_command = dshotcommand;
+                command_count = 0;
+            }
+            if (dshotcommand < 5) { // beacons
+                command_count = 6; // go on right away
+            }
+            command_count++;
+            if (command_count >= 6) {
+                command_count = 0;
+                switch (dshotcommand) { // todo
+
+                case 1:
+                    play_tone_flag = 1;
+                    break;
+                case 2:
+                    play_tone_flag = 2;
+                    break;
+                case 3:
+                    play_tone_flag = 3;
+                    break;
+                case 4:
+                    play_tone_flag = 4;
+                    break;
+                case 5:
+                    play_tone_flag = 5;
+                    break;
+                case 6:
+                    send_esc_info_flag = 1;
+                    break;
+                case 7:
+                    eepromBuffer.dir_reversed = 0;
+                    forward = 1 - eepromBuffer.dir_reversed;
+                    //	play_tone_flag = 1;
+                    break;
+                case 8:
+                    eepromBuffer.dir_reversed = 1;
+                    forward = 1 - eepromBuffer.dir_reversed;
+                    //	play_tone_flag = 2;
+                    break;
+                case 9:
+                    eepromBuffer.bi_direction = 0;
+                    break;
+                case 10:
+                    eepromBuffer.bi_direction = 1;
+                    break;
+                case 12:
+                    saveEEpromSettings();
+                    play_tone_flag = 1 + eepromBuffer.dir_reversed;
+                    //	NVIC_SystemReset();
+                    break;
+                case 13:
+                    dshot_extended_telemetry = 1;
+                    send_extended_dshot = 0b111000000000;
+                    if (EDT_ARM_ENABLE == 1) {
+                        EDT_ARMED = 1;
+                    }
+                    break;
+                case 14:
+                    dshot_extended_telemetry = 0;
+                    send_extended_dshot = 0b111011111111;
+                    //	make_dshot_package();
+                    break;
+                case 20:
+                    forward = 1 - eepromBuffer.dir_reversed;
+                    break;
+                case 21:
+                    forward = eepromBuffer.dir_reversed;
+                    break;
+                case 36:
+                    programming_mode = 1;
+            //          armed = 0;           // disarm when entering programming mode
+                    break;
+                }
+                last_dshot_command = dshotcommand;
+                dshotcommand = 0;
+            }
+        }
+    } else {
+        dshot_badcounts++;
+        programming_mode = 0;
     }
 }
 

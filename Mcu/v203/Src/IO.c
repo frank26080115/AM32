@@ -80,7 +80,7 @@ void receiveDshotDma()
     INPUT_DMA_CHANNEL->MADDR = (uint32_t)&dma_buffer[0];
     INPUT_DMA_CHANNEL->PADDR = (uint32_t)&IC_TIMER_REGISTER->CH1CVR;
     INPUT_DMA_CHANNEL->CNTR  = buffersize;
-    INPUT_DMA_CHANNEL->CFGR  = 0x98b;
+    INPUT_DMA_CHANNEL->CFGR = 0x98B | ((buffersize == 64) ? ((1 << 5) | (1 << 2)) : 0);
 
     IC_TIMER_REGISTER->CNT = 0;
     IC_TIMER_REGISTER->DMAINTENR |= TIM_DMA_CC1;

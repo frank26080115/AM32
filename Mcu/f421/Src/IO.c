@@ -26,7 +26,6 @@ void changeToOutput()
     IC_TIMER_REGISTER->cctrl = 0x3; //
     IC_TIMER_REGISTER->div = output_timer_prescaler;
     IC_TIMER_REGISTER->pr = 76; // 76 to start
-
     out_put = 1;
     IC_TIMER_REGISTER->swevt_bit.ovfswtr = TRUE;
 }
@@ -51,7 +50,7 @@ void receiveDshotDma()
     INPUT_DMA_CHANNEL->dtcnt = buffersize;
     IC_TIMER_REGISTER->iden |= TMR_C1_DMA_REQUEST;
     IC_TIMER_REGISTER->ctrl1_bit.tmren = TRUE;
-    INPUT_DMA_CHANNEL->ctrl = 0x0000098b;
+    INPUT_DMA_CHANNEL->ctrl = 0x0000098B | ((buffersize == 64) ? ((1 << 5) | (1 << 2)) : 0);
 }
 
 void sendDshotDma()

@@ -1,4 +1,4 @@
-extern void transfercomplete();
+extern void transfercomplete(char is_half);
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
 extern void doPWMChanges();
@@ -145,18 +145,22 @@ void DMA1_Channel6_IRQHandler(void)
             IC_TIMER_REGISTER->cctrl_bit.c1p = TMR_INPUT_FALLING_EDGE;
             DMA1->clr = DMA1_HDT6_FLAG;
         }
+        else if (dshot == 2) {
+            DMA1->clr = DMA1_HDT6_FLAG;
+            transfercomplete(1);
+        }
     }
 
     if (dma_flag_get(DMA1_FDT6_FLAG) == SET) {
         DMA1->clr = DMA1_GL6_FLAG;
         INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
-        transfercomplete();
+        transfercomplete(0);
         EXINT->swtrg = EXINT_LINE_15;
     }
     if (dma_flag_get(DMA1_DTERR6_FLAG) == SET) {
         DMA1->clr = DMA1_GL6_FLAG;
         INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
-        transfercomplete();
+        transfercomplete(0);
     }
 }
 
