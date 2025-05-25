@@ -175,6 +175,7 @@ void transfercomplete()
                 zero_input_count++;
             } else {
                 zero_input_count = 0;
+                #ifndef SPECIAL_BUILD_DISABLE_CALIBRATION
                 if (adjusted_input > 1500) {
                     if (getAbsDif(adjusted_input, last_input) > 50) {
                         enter_calibration_count = 0;
@@ -189,6 +190,7 @@ void transfercomplete()
                     }
                     last_input = adjusted_input;
                 }
+                #endif
             }
         }
     }
