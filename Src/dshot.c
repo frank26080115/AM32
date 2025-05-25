@@ -51,29 +51,30 @@ uint8_t  new_byte;
 
 void computeDshotDMA(char is_half)
 {
-    int tail_idx = is_half ? 31 : 63;
+    int tail_idx = (is_half || buffersize == 32) ? 31 : 63;
     char frm_time_passed = 0;
     char crc_passed = 0;
     uint16_t frame_time = 0; // must be 16 bit to handle timer wrap correctly
     uint32_t tocheck;
     dshot_frametime = 0; // 0 signals "not valid" to the code that averages the frame times
-    int tries;
-    for (tries = 0; tries < 16; tries++)
+    char tries;
+    char tries_limit = dshot == 2 ? 16 : 1;
+    for (tries = 0; tries < tries_limit; tries++)
     {
         int j, k;
         j = tail_idx - tries;
-        k = tail_idx - tries - 32;
+        k = tail_idx - tries - 31;
         j = (j + 64) % 64; // handle underflow roll-over
         k = (k + 64) % 64; // handle underflow roll-over
         frame_time = dma_buffer[j] - dma_buffer[k];
         if ((frame_time > dshot_frametime_low) && (frame_time < dshot_frametime_high)) {
             frm_time_passed = 1;
-            halfpulsetime = dshot_frametime >> 5;
+            halfpulsetime = frame_time >> 5;
             for (int i = 0; i < 16; i++) {
                 // note that dma_buffer[] is uint32_t, we cast the difference to uint16_t to handle
                 // timer wrap correctly
                 j = (i * 2) - tries;
-                j += is_half ? 0 : 32; // start at half way point if the second portion of the buffer is filled
+                j += (is_half || buffersize == 32) ? 0 : 32; // start at half way point if the second portion of the buffer is filled
                 k = j + 1;
                 j = (j + 64) % 64; // handle underflow roll-over
                 k = (k + 64) % 64; // handle underflow roll-over
@@ -108,14 +109,16 @@ void computeDshotDMA(char is_half)
                 }
             }
             else {
-                if (low_pin_count > 100 && dshot != 0)  {
+                if (low_pin_count >= 64 && dshot == 1)  {
                     // we are certain that telemetry is not used
                     // change these variables so that the rest of the code, especially receiveDshotDma, is aware that we are going into the double buffered circular mode
+                    #if 0
                     buffersize = 64;
                     dshot = 2;
                     receiveDshotDma(); // restart the DMA with new settings, receiveDshotDma won't be called again after that
+                    #endif
                 }
-                else {
+                else if (low_pin_count < 64) {
                     low_pin_count++;
                 }
                 // don't let the high_pin_count accumulate slowly for no good reason (only glitches)

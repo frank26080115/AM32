@@ -150,7 +150,7 @@ void transfercomplete(char is_half)
 
             if (dshot) {
                 computeDshotDMA(is_half);
-                if (dshot == 1) {
+                if (dshot <= 1) {
                     receiveDshotDma();
                 }
             }
@@ -178,7 +178,7 @@ void transfercomplete(char is_half)
                 zero_input_count++;
             } else {
                 zero_input_count = 0;
-                if (adjusted_input > 1500) {
+                if (adjusted_input > 1500 && servoPwm) {
                     if (getAbsDif(adjusted_input, last_input) > 50) {
                         enter_calibration_count = 0;
                     } else {
