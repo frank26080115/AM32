@@ -5,7 +5,7 @@
 
   <Header>### uVision Project, (C) Keil Software</Header>
 
-  <WorkspaceName>WorkSpace</WorkspaceName>
+  <WorkspaceName>D:\GithubRepos\AM32\Keil_Projects\AM32_MultiProject.uvmpw</WorkspaceName>
 
   <project>
     <PathAndName>.\Am32e230.uvprojx</PathAndName>
@@ -25,10 +25,12 @@
 
   <project>
     <PathAndName>.\Am32F421.uvprojx</PathAndName>
+    <NodeIsActive>1</NodeIsActive>
   </project>
 
   <project>
     <PathAndName>.\Am32G071.uvprojx</PathAndName>
+    <NodeIsExpanded>1</NodeIsExpanded>
   </project>
 
   <project>
@@ -41,8 +43,6 @@
 
   <project>
     <PathAndName>.\Am32G031.uvprojx</PathAndName>
-    <NodeIsActive>1</NodeIsActive>
-    <NodeIsExpanded>1</NodeIsExpanded>
   </project>
 
 </ProjectWorkspace>

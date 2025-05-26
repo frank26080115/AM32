@@ -1226,12 +1226,18 @@ void tenKhzRoutine()
     ledcounter++;
     one_khz_loop_counter++;
     if (!armed) {
-        if (cell_count == 0) {
-            if (inputSet) {
-                if (adjusted_input == 0) {
+        char force_arm = 0;
+        #ifdef SPECIAL_BUILD_ALWAYS_ARMED
+        if (signaltimeout == 0) {
+            force_arm = 1;
+        }
+        #endif
+        if (cell_count == 0 || force_arm) {
+            if (inputSet || force_arm) {
+                if (adjusted_input == 0 || force_arm) {
                     armed_timeout_count++;
-                    if (armed_timeout_count > LOOP_FREQUENCY_HZ) { // one second
-                        if (zero_input_count > 30) {
+                    if (armed_timeout_count > LOOP_FREQUENCY_HZ || force_arm) { // one second
+                        if (zero_input_count > 30 || force_arm) {
                             armed = 1;
 #ifdef USE_LED_STRIP
                             //	send_LED_RGB(0,0,0);
@@ -1814,7 +1820,7 @@ if(zero_crosses < 5){
               tim1_arr = 250 * (CPU_FREQUENCY_MHZ/9);
           } 
         }
-        if (signaltimeout > (LOOP_FREQUENCY_HZ >> 1)) { // half second timeout when armed;
+        if (signaltimeout > (LOOP_FREQUENCY_HZ)) { // 1 second timeout when armed;
             if (armed) {
                 allOff();
                 armed = 0;
@@ -1828,7 +1834,7 @@ if(zero_crosses < 5){
                 }
                 NVIC_SystemReset();
             }
-            if (signaltimeout > LOOP_FREQUENCY_HZ << 1) { // 2 second when not armed
+            if (signaltimeout > LOOP_FREQUENCY_HZ << 2) { // 4 second when not armed
                 allOff();
                 armed = 0;
                 input = 0;
