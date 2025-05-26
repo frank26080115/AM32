@@ -1834,7 +1834,7 @@ if(zero_crosses < 5){
                 }
                 NVIC_SystemReset();
             }
-            if (signaltimeout > LOOP_FREQUENCY_HZ << 2) { // 4 second when not armed
+            if (signaltimeout > (LOOP_FREQUENCY_HZ << 1)) { // 2 second when not armed
                 allOff();
                 armed = 0;
                 input = 0;

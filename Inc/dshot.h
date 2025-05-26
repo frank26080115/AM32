@@ -18,6 +18,7 @@ extern void playInputTune2(void);
 extern void playBeaconTune3(void);
 extern void saveEEpromSettings(void);
 
+extern char dshot;
 extern char dshot_telemetry;
 extern char armed;
 extern char dir_reversed;

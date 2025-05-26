@@ -39,6 +39,7 @@ extern void processDshot();
 extern char send_telemetry;
 extern char telemetry_done;
 extern char servoPwm;
+extern char dshot;
 extern char dshot_telemetry;
 extern char armed;
 extern char out_put;
