@@ -116,7 +116,9 @@ void DMA1_Channel5_IRQHandler(void)
     }
     if( DMA1->INTFR & DMA1_IT_TC5)
     {
-        CLEAR_BIT(INPUT_DMA_CHANNEL->CFGR,0x1);  //disable DMA1_CH5
+        if (dshot != 2) {
+            CLEAR_BIT(INPUT_DMA_CHANNEL->CFGR, 0x1);  //disable DMA1_CH5
+        }
         transfercomplete(0);
         DMA1->INTFCR = DMA1_IT_TC5;
         input_ready = 1;
@@ -126,6 +128,10 @@ void DMA1_Channel5_IRQHandler(void)
     {
         CLEAR_BIT(INPUT_DMA_CHANNEL->CFGR,0x1);  //disable DMA1_CH5
         DMA_ClearFlag(DMA1_IT_TE5);
+        if (dshot == 2) {
+            dshot = 1;
+            buffersize = 32;
+        }
         transfercomplete(0);
         input_ready = 1;
     }

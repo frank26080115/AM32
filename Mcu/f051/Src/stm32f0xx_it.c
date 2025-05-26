@@ -132,7 +132,9 @@ void DMA1_Channel4_5_IRQHandler(void)
     }
     if (LL_DMA_IsActiveFlag_TC5(DMA1) == 1) {
         LL_DMA_ClearFlag_GI5(DMA1);
-        LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_5);
+        if (dshot != 2) {
+            LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_5);
+        }
         transfercomplete(0);
         EXTI->SWIER |= LL_EXTI_LINE_15;
         return;
@@ -184,7 +186,9 @@ void DMA1_Channel4_5_IRQHandler(void)
     }
     if (LL_DMA_IsActiveFlag_TC4(DMA1) == 1) {
         LL_DMA_ClearFlag_GI4(DMA1);
-        LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
+        if (dshot != 2) {
+            LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
+        }
         transfercomplete(0);
         EXTI->SWIER |= LL_EXTI_LINE_15;
     } else if (LL_DMA_IsActiveFlag_TE4(DMA1) == 1) {

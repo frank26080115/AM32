@@ -248,7 +248,9 @@ void DMA1_Channel5_IRQHandler(void)
     }
     if (LL_DMA_IsActiveFlag_TC5(DMA1) == 1) {
         DMA1->IFCR |= DMA_IFCR_CGIF5;
-        DMA1_Channel5->CCR = 0x00;
+        if (dshot != 2) {
+            DMA1_Channel5->CCR = 0x00;
+        }
         transfercomplete(0);
         EXTI->SWIER1 |= LL_EXTI_LINE_15;
     }

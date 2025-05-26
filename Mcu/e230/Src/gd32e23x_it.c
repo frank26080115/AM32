@@ -12,6 +12,7 @@ extern void processDshot();
 extern char send_telemetry;
 extern char telemetry_done;
 extern char servoPwm;
+extern char dshot;
 extern char dshot_telemetry;
 extern char out_put;
 extern char armed;
@@ -98,7 +99,9 @@ void DMA_Channel3_4_IRQHandler(void)
     }
     if (dma_interrupt_flag_get(INPUT_DMA_CHANNEL, DMA_INT_FLAG_FTF) == 1) {
         dma_interrupt_flag_clear(INPUT_DMA_CHANNEL, DMA_INT_FLAG_G);
-        dma_channel_disable(INPUT_DMA_CHANNEL);
+        if (dshot != 2) {
+            dma_channel_disable(INPUT_DMA_CHANNEL);
+        }
         transfercomplete(0);
         EXTI_SWIEV |= (uint32_t)EXTI_15;
     } else if (dma_interrupt_flag_get(INPUT_DMA_CHANNEL, DMA_INT_FLAG_ERR) == 1) {

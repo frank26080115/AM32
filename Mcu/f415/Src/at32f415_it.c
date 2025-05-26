@@ -153,13 +153,19 @@ void DMA1_Channel6_IRQHandler(void)
 
     if (dma_flag_get(DMA1_FDT6_FLAG) == SET) {
         DMA1->clr = DMA1_GL6_FLAG;
-        INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
+        if (dshot != 2) {
+            INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
+        }
         transfercomplete(0);
         EXINT->swtrg = EXINT_LINE_15;
     }
     if (dma_flag_get(DMA1_DTERR6_FLAG) == SET) {
         DMA1->clr = DMA1_GL6_FLAG;
         INPUT_DMA_CHANNEL->ctrl_bit.chen = FALSE;
+        if (dshot == 2) {
+            dshot = 1;
+            buffersize = 32;
+        }
         transfercomplete(0);
     }
 }

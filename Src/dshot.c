@@ -51,14 +51,14 @@ uint8_t  new_byte;
 
 void computeDshotDMA(char is_half)
 {
-    int tail_idx = (is_half || buffersize == 32) ? 31 : 63;
+    int tail_idx = is_half ? 31 : (buffersize - 1);
     char frm_time_passed = 0;
     char crc_passed = 0;
     uint16_t frame_time = 0; // must be 16 bit to handle timer wrap correctly
     uint32_t tocheck;
     dshot_frametime = 0; // 0 signals "not valid" to the code that averages the frame times
     char tries;
-    char tries_limit = dshot == 2 ? 16 : 1;
+    char tries_limit = dshot == 2 ? 4 : 1;
     for (tries = 0; tries < tries_limit; tries++)
     {
         int j, k;
@@ -112,7 +112,7 @@ void computeDshotDMA(char is_half)
                 if (low_pin_count >= 64 && dshot == 1)  {
                     // we are certain that telemetry is not used
                     // change these variables so that the rest of the code, especially receiveDshotDma, is aware that we are going into the double buffered circular mode
-                    #if 0
+                    #if 1
                     buffersize = 64;
                     dshot = 2;
                     receiveDshotDma(); // restart the DMA with new settings, receiveDshotDma won't be called again after that
