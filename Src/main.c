@@ -551,7 +551,7 @@ uint16_t duty_cycle = 0;
 char step = 1;
 uint32_t commutation_interval = 12500;
 uint16_t waitTime = 0;
-uint16_t signaltimeout = 0;
+uint16_t signaltimeout = 1;
 uint8_t ubAnalogWatchdogStatus = RESET;
 
 #ifdef NEED_INPUT_READY
@@ -1226,7 +1226,7 @@ void tenKhzRoutine()
     ledcounter++;
     one_khz_loop_counter++;
     if (!armed) {
-        char force_arm = 0;
+        static char force_arm = 0;
         #ifdef SPECIAL_BUILD_ALWAYS_ARMED
         if (signaltimeout == 0) {
             force_arm = 1;
@@ -1236,7 +1236,7 @@ void tenKhzRoutine()
             if (inputSet || force_arm) {
                 if (adjusted_input == 0 || force_arm) {
                     armed_timeout_count++;
-                    if (armed_timeout_count > LOOP_FREQUENCY_HZ || force_arm) { // one second
+                    if (armed_timeout_count > LOOP_FREQUENCY_HZ) { // one second
                         if (zero_input_count > 30 || force_arm) {
                             armed = 1;
 #ifdef USE_LED_STRIP
@@ -1823,28 +1823,12 @@ if(zero_crosses < 5){
         if (signaltimeout > (LOOP_FREQUENCY_HZ)) { // 1 second timeout when armed;
             if (armed) {
                 allOff();
-                armed = 0;
-                input = 0;
-                inputSet = 0;
-                zero_input_count = 0;
                 SET_DUTY_CYCLE_ALL(0);
-                resetInputCaptureTimer();
-                for (int i = 0; i < 64; i++) {
-                    dma_buffer[i] = 0;
-                }
                 NVIC_SystemReset();
             }
             if (signaltimeout > (LOOP_FREQUENCY_HZ << 1)) { // 2 second when not armed
                 allOff();
-                armed = 0;
-                input = 0;
-                inputSet = 0;
-                zero_input_count = 0;
                 SET_DUTY_CYCLE_ALL(0);
-                resetInputCaptureTimer();
-                for (int i = 0; i < 64; i++) {
-                    dma_buffer[i] = 0;
-                }
                 NVIC_SystemReset();
             }
         }

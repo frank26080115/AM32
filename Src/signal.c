@@ -49,8 +49,10 @@ void computeMSInput()
 
 void computeServoInput()
 {
-    if (((dma_buffer[1] - dma_buffer[0]) > 800) && ((dma_buffer[1] - dma_buffer[0]) < 2200)) {
-				signaltimeout = 0;
+    if (((dma_buffer[1] - dma_buffer[0]) > 800) && ((dma_buffer[1] - dma_buffer[0]) < 2200))
+    {
+        signaltimeout = 0;
+        #ifndef SPECIAL_BUILD_DISABLE_CALIBRATION
         if (calibration_required) {
             if (!high_calibration_set) {
                 if (high_calibration_counts == 0) {
@@ -85,7 +87,9 @@ void computeServoInput()
                 }
             }
             signaltimeout = 0;
-        } else {
+        } else
+        #endif
+        {
             if (eepromBuffer.bi_direction) {
                 if (dma_buffer[1] - dma_buffer[0] <= servo_neutral) {
                     servorawinput = map((dma_buffer[1] - dma_buffer[0]),
