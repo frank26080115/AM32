@@ -8,8 +8,6 @@
 
 #include "targets.h"
 
-extern char prop_brake_active;
-
 #ifndef PWM_ENABLE_BRIDGE
 
 #ifdef USE_INVERTED_LOW
@@ -59,7 +57,7 @@ void proportionalBrake()
 
 void phaseBPWM()
 {
-    if (!eepromBuffer.comp_pwm) { // for future
+    if (!complementary_pwm) { // for future
         LL_GPIO_SetPinMode(PHASE_B_GPIO_PORT_LOW, PHASE_B_GPIO_LOW,
             LL_GPIO_MODE_OUTPUT);
         PHASE_B_GPIO_PORT_LOW->LOW_BITREG_OFF = PHASE_B_GPIO_LOW;
@@ -97,7 +95,7 @@ void phaseBLOW()
 
 void phaseCPWM()
 {
-    if (!eepromBuffer.comp_pwm) {
+    if (!complementary_pwm) {
         LL_GPIO_SetPinMode(PHASE_C_GPIO_PORT_LOW, PHASE_C_GPIO_LOW,
             LL_GPIO_MODE_OUTPUT);
         PHASE_C_GPIO_PORT_LOW->LOW_BITREG_OFF = PHASE_C_GPIO_LOW;
@@ -135,7 +133,7 @@ void phaseCLOW()
 
 void phaseAPWM()
 {
-    if (!eepromBuffer.comp_pwm) {
+    if (!complementary_pwm) {
         LL_GPIO_SetPinMode(PHASE_A_GPIO_PORT_LOW, PHASE_A_GPIO_LOW,
             LL_GPIO_MODE_OUTPUT);
         PHASE_A_GPIO_PORT_LOW->LOW_BITREG_OFF = PHASE_A_GPIO_LOW;
@@ -172,7 +170,7 @@ void phaseALOW()
 //////////////////////////////////PHASE 1//////////////////////
 void phaseBPWM()
 {
-    if (!eepromBuffer.comp_pwm) { // for future
+    if (!complementary_pwm) { // for future
                      // LL_GPIO_SetPinMode(PHASE_B_GPIO_PORT_LOW,
                      // PHASE_B_GPIO_LOW, LL_GPIO_MODE_OUTPUT);
                      // PHASE_B_GPIO_PORT_LOW->LOW_BITREG_OFF = PHASE_B_GPIO_LOW;
@@ -211,7 +209,7 @@ void phaseBLOW()
 
 void phaseCPWM()
 {
-    if (!eepromBuffer.comp_pwm) {
+    if (!complementary_pwm) {
         //	LL_GPIO_SetPinMode(PHASE_C_GPIO_PORT_LOW, PHASE_C_GPIO_LOW,
         // LL_GPIO_MODE_OUTPUT); PHASE_C_GPIO_PORT_LOW->LOW_BITREG_OFF =
         // PHASE_C_GPIO_LOW;
@@ -250,7 +248,7 @@ void phaseCLOW()
 
 void phaseAPWM()
 {
-    if (!eepromBuffer.comp_pwm) {
+    if (!complementary_pwm) {
         //	LL_GPIO_SetPinMode(PHASE_A_GPIO_PORT_LOW, PHASE_A_GPIO_LOW,
         // LL_GPIO_MODE_OUTPUT); PHASE_A_GPIO_PORT_LOW->LOW_BITREG_OFF =
         // PHASE_A_GPIO_LOW;

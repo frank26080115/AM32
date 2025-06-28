@@ -433,6 +433,7 @@ uint8_t adc_counter = 0;
 char send_telemetry = 0;
 char telemetry_done = 0;
 char prop_brake_active = 0;
+char complementary_pwm = 0;
 
 char dshot_telemetry = 0;
 
@@ -1686,6 +1687,8 @@ int main(void)
         stall_protect_minimum_duty = stall_protect_minimum_duty + 50;
         min_startup_duty = min_startup_duty + 50;
     }
+
+    complementary_pwm = eepromBuffer.comp_pwm;
 
 #ifdef MCU_F031
     GPIOF->BSRR = LL_GPIO_PIN_6; // uncomment to take bridge out of standby mode
