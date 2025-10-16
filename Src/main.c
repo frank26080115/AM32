@@ -1303,10 +1303,14 @@ void tenKhzRoutine()
     if (!armed) {
         if (cell_count == 0) {
             if (inputSet) {
-                if (adjusted_input == 0) {
+                char force_arm = 0;
+                #ifdef SPECIAL_BUILD_ALWAYS_ARMED
+                force_arm = 1;
+                #endif
+                if (adjusted_input == 0 || force_arm) {
                     armed_timeout_count++;
-                    if (armed_timeout_count > LOOP_FREQUENCY_HZ) { // one second
-                        if (zero_input_count > 30) {
+                    if (armed_timeout_count > LOOP_FREQUENCY_HZ || force_arm) { // one second
+                        if (zero_input_count > 30 || force_arm) {
                             armed = 1;
 #ifdef USE_LED_STRIP
                             //	send_LED_RGB(0,0,0);
