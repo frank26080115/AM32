@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define SPECIAL_BUILD_ALWAYS_ARMED
+
 extern EEprom_t eepromBuffer;
 extern uint32_t eeprom_address;
 extern uint16_t TIMER1_MAX_ARR;
