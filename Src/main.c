@@ -1351,6 +1351,22 @@ void tenKhzRoutine()
         }
     }
 
+    #ifdef SPECIAL_BUILD_PRECHARGE
+    if (!armed) {
+        if (precharge_state == 1) { // check has been performed but did not pass
+            #ifdef USE_LED_STRIP
+                delayMicros(1000);
+                send_LED_RGB(0, 0, 128);
+            #endif
+            #ifdef USE_RGB_LED
+                GPIOB->BSRR = LL_GPIO_PIN_3;
+                GPIOB->BSRR = LL_GPIO_PIN_8;
+                GPIOB->BRR = LL_GPIO_PIN_5;
+            #endif
+        }
+    }
+    #endif
+
     if (eepromBuffer.telemetry_on_interval) {
         telem_ms_count++;
         if (telem_ms_count > ((telemetry_interval_ms - 1 + eepromBuffer.telemetry_on_interval) * 20)) {

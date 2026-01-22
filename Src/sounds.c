@@ -17,6 +17,8 @@
 #define ERASED_FLASH_BYTE  0xFF
 #endif
 
+extern char precharge_check(void);
+
 uint8_t beep_volume;
 
 void pause(uint16_t ms)
@@ -96,6 +98,12 @@ void playBlueJayTune()
 
 void playStartupTune()
 {
+    #ifdef SPECIAL_BUILD_PRECHARGE
+    if (precharge_tone()) {
+        return;
+    }
+    #endif
+
     __disable_irq();
 
     if (eepromBuffer.tune[0] != ERASED_FLASH_BYTE) {
@@ -197,6 +205,11 @@ void playInputTune2()
 
 void playInputTune()
 {
+    #ifdef SPECIAL_BUILD_PRECHARGE
+    if (precharge_check()) {
+        return;
+    }
+    #endif
     __disable_irq();
     SET_AUTO_RELOAD_PWM(TIM1_AUTORELOAD);
     RELOAD_WATCHDOG_COUNTER();
