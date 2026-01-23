@@ -4,6 +4,7 @@
 #pragma once
 
 #define SPECIAL_BUILD_ALWAYS_ARMED
+#define SPECIAL_BUILD_PRECHARGE
 
 extern EEprom_t eepromBuffer;
 extern uint32_t eeprom_address;

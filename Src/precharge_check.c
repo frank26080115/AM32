@@ -54,21 +54,28 @@ char precharge_check(void)
         precharge_max_batt = precharge_wait_rise(50);
     }
 
+    // pick the highest volume to climb to, up to the user selected volume
+    uint8_t top_volume = beep_volume <= 4 ? 4 : beep_volume;
+    uint32_t t_step = PRECHARGE_TONE_DURATION_MS / ((top_volume - 2) / 2);
+
     // start playing tone
-    SET_DUTY_CYCLE_ALL(PRECHARGE_TONE_VOLUME);
+    SET_DUTY_CYCLE_ALL(2);
     SET_AUTO_RELOAD_PWM(TIM1_AUTORELOAD);
     RELOAD_WATCHDOG_COUNTER();
     SET_PRESCALER_PWM(PRECHARGE_TONE_FREQ_PRESCALER);
     setCaptureCompare();
     comStep(6);
-    for (uint8_t i = 0; i < PRECHARGE_TONE_DURATION_MS; i++) {
-        RELOAD_WATCHDOG_COUNTER();
-        delayMillis(1);
-        uint16_t bv = precharge_adc();
-        if (bv < (precharge_max_batt - PRECHARGE_DROP_THRESHOLD)) {
-            // quit early if voltage drops too much
-            ret = 1;
-            break;
+    for (uint8_t v = 2; v < top_volume && ret == 0; v += 2) { // go up in volume gradually
+        SET_DUTY_CYCLE_ALL(v);
+        for (uint32_t j = 0; j < t_step; j++) {
+            RELOAD_WATCHDOG_COUNTER();
+            delayMillis(1);
+            uint16_t bv = precharge_adc();
+            if (bv < (precharge_max_batt - PRECHARGE_DROP_THRESHOLD)) {
+                // quit early if voltage drops too much
+                ret = 1;
+                break;
+            }
         }
     }
     allOff();
