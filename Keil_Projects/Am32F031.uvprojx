@@ -429,6 +429,11 @@
               <FileType>1</FileType>
               <FilePath>..\Src\kiss_telemetry.c</FilePath>
             </File>
+            <File>
+              <FileName>precharge_check.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\precharge_check.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
