@@ -7,6 +7,7 @@
 
 #include "functions.h"
 #include "targets.h"
+#include "precharge_check.h"
 
 // long map(long x, long in_min, long in_max, long out_min, long out_max)
 //{
@@ -82,6 +83,9 @@ void delayMillis(uint32_t millis)
 {
     while (millis-- > 0) {
         delayMicros(1000UL);
+        #ifdef SPECIAL_BUILD_PRECHARGE
+        precharge_poll(0);
+        #endif
     }
 }
 
