@@ -6,16 +6,19 @@
 #include "phaseouts.h"
 #include "targets.h"
 
-#define PRECHARGE_DROP_THRESHOLD         200//580
+#define PRECHARGE_DROP_THRESHOLD_RUNNING   200//580
 // threshold for pass or fail the precharge check
-// if the battery voltage drops this much due to the tone, then the test fails
+// if the battery voltage drops this much due to running motor, then the test fails
 // unit is centivolts, volts*100, example: 580 means 5.8 volts, which is 39ohms and 150mA (this is under 1W)
+
+#define PRECHARGE_DROP_THRESHOLD_TONE      100
+// if the battery voltage drops this much due to static tone, then the test fails
 
 //#define PRECHARGE_CURRENT_THRESHOLD    10
 // in centiamps, so 10 means 0.1A
 // when the current measured exceeds this value, the voltage drop is checked
 
-#define PRECHARGE_TEST_PASSED_TIME     200
+#define PRECHARGE_TEST_PASSED_TIME     500
 // number of milliseconds that the test must pass before the test never happens again
 
 #define PRECHARGE_VOLTAGE_SETTLE_TIME  200
@@ -24,6 +27,7 @@
 extern char armed;
 extern uint8_t running;
 extern uint16_t input;
+extern uint16_t beep_volume;
 extern uint16_t ADC_raw_volts;
 extern uint16_t ADC_raw_current;
 extern uint16_t VOLTAGE_DIVIDER;
@@ -33,13 +37,12 @@ extern uint16_t tim1_arr;
 extern void ADC_DMA_Callback(void);
 
 char prechg_check_stage = 0;
-char prechg_motor_running = 0;
 char prechg_tripped = 0;
 uint32_t prechg_bv_flt_heavy = 0;
 uint32_t prechg_bv_temp_max = 0;
 uint16_t prechg_bv_settled_count = 0;
 uint32_t prechg_bv_settled = 0;
-uint32_t prechg_bv_flt_medium = 0;
+//uint32_t prechg_bv_flt_medium = 0;
 uint32_t prechg_bv_flt_light  = 0;
 uint32_t prechg_cur_flt_heavy = 0;
 uint32_t prechg_cur_settled = 0;
@@ -62,6 +65,58 @@ void precharge_stage2(void)
         prechg_tripped = 0;
     }
     prechg_check_stage = 2;
+}
+
+void precharge_static_test_p(uint32_t duration, uint32_t volume, uint32_t prescaler, uint8_t step)
+{
+    if (prechg_check_stage == 0) {
+        // this means check is not needed
+        return;
+    }
+    __disable_irq();
+    #if 0
+    // battery voltage must settle before this works
+    while (prechg_bv_settled == 0) {
+        RELOAD_WATCHDOG_COUNTER();
+        delayMicros(1000);
+        precharge_poll(0);
+    }
+    #endif
+    RELOAD_WATCHDOG_COUNTER();
+    SET_DUTY_CYCLE_ALL(volume);
+    SET_AUTO_RELOAD_PWM(TIM1_AUTORELOAD);
+    setCaptureCompare();
+    comStep(step);
+    SET_PRESCALER_PWM(prescaler);
+    for (uint32_t i = 0; i < duration; i++)
+    {
+        RELOAD_WATCHDOG_COUNTER();
+        delayMicros(1000);
+        precharge_poll(0);
+    }
+    allOff();
+    SET_PRESCALER_PWM(0);
+    SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
+    SET_DUTY_CYCLE_ALL(beep_volume);
+    __enable_irq();
+}
+
+void precharge_static_test(void)
+{
+    if (prechg_check_stage == 0) {
+        // this means check is not needed
+        return;
+    }
+
+    // battery voltage must settle before this works
+    while (prechg_bv_settled == 0) {
+        RELOAD_WATCHDOG_COUNTER();
+        delayMicros(1000);
+        precharge_poll(0);
+    }
+    // this is done here so that maybe the volume can be adjusted later according to input voltage
+
+    precharge_static_test_p(200, TIM1_AUTORELOAD / 4, 0, 1);
 }
 
 void precharge_poll(char force)
@@ -121,7 +176,7 @@ void precharge_poll(char force)
 
     uint32_t converted_voltage = ((ADC_raw_volts * 3300 / 4095 * VOLTAGE_DIVIDER) / 100);
     prechg_bv_flt_heavy  = (prechg_bv_flt_heavy  == 0) ? converted_voltage : (((31 * prechg_bv_flt_heavy)  + converted_voltage) >> 5);
-    prechg_bv_flt_medium = (prechg_bv_flt_medium == 0) ? converted_voltage : ((( 7 * prechg_bv_flt_medium) + converted_voltage) >> 3);
+    //prechg_bv_flt_medium = (prechg_bv_flt_medium == 0) ? converted_voltage : ((( 7 * prechg_bv_flt_medium) + converted_voltage) >> 3);
     prechg_bv_flt_light  = (prechg_bv_flt_light  == 0) ? converted_voltage : ((( 3 * prechg_bv_flt_light)  + converted_voltage) >> 2);
 
     #ifdef PRECHARGE_CURRENT_THRESHOLD
@@ -158,21 +213,26 @@ void precharge_poll(char force)
 
     if (prechg_bv_settled != 0) // voltage settled and we want to check
     {
+        char motor_running = 0;
+
         #ifdef PRECHARGE_CURRENT_THRESHOLD
         // if we are drawing enough current, then the motor is running
-        prechg_motor_running |= (prechg_cur_flt_heavy > prechg_cur_settled && (prechg_cur_flt_heavy - prechg_cur_settled) > PRECHARGE_CURRENT_THRESHOLD);
+        motor_running |= (prechg_cur_flt_heavy > prechg_cur_settled && (prechg_cur_flt_heavy - prechg_cur_settled) > PRECHARGE_CURRENT_THRESHOLD);
         #endif
         if (armed && input > 50) {
             prechg_check_stage = 2;
         }
         if (prechg_check_stage > 1) {
             // if the throttle is above 12%, consider the motor to be running
-            prechg_motor_running |= (adjusted_duty_cycle > (tim1_arr / 8) || adjusted_duty_cycle > (TIMER1_MAX_ARR / 8) || adjusted_duty_cycle > (TIM1_AUTORELOAD / 8));
+            motor_running |= (adjusted_duty_cycle > (tim1_arr / 8) || adjusted_duty_cycle > (TIMER1_MAX_ARR / 8) || adjusted_duty_cycle > (TIM1_AUTORELOAD / 8));
         }
 
-        if (prechg_motor_running || prechg_check_stage == 1)
+        if (motor_running || prechg_check_stage == 1)
         { // or we are just checking during tone generation (which might not have detectable current)
-            if (prechg_bv_flt_light < (prechg_bv_settled - PRECHARGE_DROP_THRESHOLD))
+
+            uint32_t drop_thresh = (prechg_check_stage == 1) ? PRECHARGE_DROP_THRESHOLD_TONE : PRECHARGE_DROP_THRESHOLD_RUNNING;
+
+            if (prechg_bv_flt_light < (prechg_bv_settled - drop_thresh))
             {
                 // test failed
 
@@ -201,7 +261,7 @@ void precharge_poll(char force)
             else
             {
                 prechg_tripped = 0;
-                if (prechg_motor_running) {
+                if (motor_running) {
                     // only count the time if the motor is running
                     prechg_passed_cnt++;
                     // if we have passed the test for a long period, do not run the test anymore, preventing accidental false positives
