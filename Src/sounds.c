@@ -12,6 +12,7 @@
 #include "peripherals.h"
 #include "phaseouts.h"
 #include "targets.h"
+#include "precharge_check.h"
 
 #ifndef ERASED_FLASH_BYTE
 #define ERASED_FLASH_BYTE  0xFF
@@ -122,6 +123,8 @@ void playStartupTune()
 
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
     __enable_irq();
+
+    precharge_static_test();
 }
 
 void playBrushedStartupTune()
@@ -193,6 +196,7 @@ void playInputTune2()
     signaltimeout = 0;
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
     __enable_irq();
+    precharge_static_test();
 }
 
 void playInputTune()
@@ -213,6 +217,7 @@ void playInputTune()
     signaltimeout = 0;
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
     __enable_irq();
+    precharge_static_test();
 }
 
 void playDefaultTone()
@@ -229,6 +234,7 @@ void playDefaultTone()
     SET_PRESCALER_PWM(0);
     signaltimeout = 0;
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
+    precharge_static_test();
 }
 
 void playChangedTone()
