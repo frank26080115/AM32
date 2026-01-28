@@ -332,3 +332,4 @@ void enableCorePeripherals()
  gpio_mode_QUICK(GPIOB, GPIO_MODE_OUTPUT, GPIO_PULL_NONE, GPIO_PINS_8);
 #endif
 }
+

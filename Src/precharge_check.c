@@ -6,183 +6,210 @@
 #include "phaseouts.h"
 #include "targets.h"
 
-#define PRECHARGE_TONE_VOLUME            4
-// tune this for conditions
-// the unit is the EEMPROM volume number * 2, so if the configurator sets 1, this value is 2
-// note: the 39ohm resistor is typically rated 1W so we only want 150mA, 3W for 500ms is ok
-// warning: absolutely do not go above 20 for this value
-
-#define PRECHARGE_TONE_FREQ_PRESCALER    5
-// lower number = higher pitched tone
-// the default startup tone ends at prescaler 25
-
-#define PRECHARGE_TONE_DURATION_MS       200
-// we need to play the tone long enough to drain the capacitor but also not burn out the precharge resistor
-// if the current draw is low enough, this can be longer for bigger capacitors
-// if the current draw is high, then keep this short, and hope that the capacitors drain faster
-// estimates say pushing a 1W resistor to 3W for 500ms is likely safe
-
-#define PRECHARGE_DROP_THRESHOLD         58
+#define PRECHARGE_DROP_THRESHOLD         200//580
 // threshold for pass or fail the precharge check
 // if the battery voltage drops this much due to the tone, then the test fails
-// unit is decivolts, volts*10, example: 58 means 5.8 volts, which is 39ohms and 150mA (this is under 1W)
+// unit is centivolts, volts*100, example: 580 means 5.8 volts, which is 39ohms and 150mA (this is under 1W)
 
-extern uint8_t beep_volume;
+//#define PRECHARGE_CURRENT_THRESHOLD    10
+// in centiamps, so 10 means 0.1A
+// when the current measured exceeds this value, the voltage drop is checked
+
+#define PRECHARGE_TEST_PASSED_TIME     200
+// number of milliseconds that the test must pass before the test never happens again
+
+#define PRECHARGE_VOLTAGE_SETTLE_TIME  200
+// number of milliseconds that the voltage must settle (or start declining) before testing can happen
+
 extern char armed;
-extern uint16_t battery_voltage;
+extern uint8_t running;
+extern uint16_t input;
 extern uint16_t ADC_raw_volts;
+extern uint16_t ADC_raw_current;
+extern uint16_t VOLTAGE_DIVIDER;
+extern uint16_t adjusted_duty_cycle;
+extern uint16_t tim1_arr;
 
-char precharge_state = 0;
-uint16_t precharge_max_batt = 0;
+extern void ADC_DMA_Callback(void);
 
-char precharge_check(void)
+char prechg_check_stage = 0;
+char prechg_motor_running = 0;
+char prechg_tripped = 0;
+uint32_t prechg_bv_flt_heavy = 0;
+uint32_t prechg_bv_temp_max = 0;
+uint16_t prechg_bv_settled_count = 0;
+uint32_t prechg_bv_settled = 0;
+uint32_t prechg_bv_flt_medium = 0;
+uint32_t prechg_bv_flt_light  = 0;
+uint32_t prechg_cur_flt_heavy = 0;
+uint32_t prechg_cur_settled = 0;
+uint32_t prechg_passed_cnt = 0;
+
+void precharge_require(void)
 {
-    // return 1 if not fully powered
-    char ret = 0;
+    prechg_check_stage = 1;
+    prechg_passed_cnt = 0;
+    prechg_tripped = 0;
+}
 
-    #if 0
-    if (precharge_state == 2) {
-        // if already checked, return immediately
-        return ret;
+void precharge_stage2(void)
+{
+    if (prechg_check_stage == 0) {
+        return;
     }
+    if (prechg_check_stage != 2) {
+        //prechg_passed_cnt = 0;
+        prechg_tripped = 0;
+    }
+    prechg_check_stage = 2;
+}
+
+void precharge_poll(char force)
+{
+    if (prechg_check_stage == 0) {
+        // this means check is not needed
+        return;
+    }
+
+    static uint32_t last_time = 0;
+    volatile uint32_t curr_time;
+    // utility timer counts microseconds
+    #if defined(STMICRO)
+        curr_time = UTILITY_TIMER->CNT;
+    #elif defined(GIGADEVICES)
+        curr_time = TIMER_CNT(UTILITY_TIMER);
+    #elif defined(ARTERY)
+        curr_time = UTILITY_TIMER->cval;
+    #elif defined(WCH)
+        curr_time = UTILITY_TIMER->CNT>>1;
+    #else
+        #error unsupported MCU
     #endif
 
-    __disable_irq();
+    // we want to execute only once every millisecond
+    if ((curr_time - last_time) < 1000 && force == 0) {
+        return; // not time yet
+    }
+    last_time = curr_time;
 
-    // for wait for capacitor to charge
-    if (precharge_max_batt == 0) {
-        precharge_max_batt = precharge_wait_rise(50);
+    if (force == 0)
+    {
+        // this means running from a tight loop, so we need to check the ADC
+        #if defined(STMICRO)
+            ADC_DMA_Callback();
+            LL_ADC_REG_StartConversion(ADC1);
+        #elif defined(MCU_GDE23)
+            // don't check DMA, assume ready
+            ADC_DMA_Callback();
+            adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
+        #elif defined(ARTERY)
+            ADC_DMA_Callback();
+            adc_ordinary_software_trigger_enable(ADC1, TRUE);
+        #elif defined(WCH)
+            DMA_ClearFlag(DMA1_IT_TC1|DMA1_IT_HT1);
+            ADC_DMA_Callback();
+            startADCConversion();
+        #else
+            ADC_DMA_Callback();
+        #endif
     }
 
-    // pick the highest volume to climb to, up to the user selected volume
-    uint8_t top_volume = beep_volume <= 4 ? 4 : beep_volume;
-    uint32_t t_step = PRECHARGE_TONE_DURATION_MS / ((top_volume - 2) / 2);
+    if (ADC_raw_volts == 0) {
+        // no ADC result? do not do anything
+        return;
+    }
 
-    // start playing tone
-    SET_DUTY_CYCLE_ALL(2);
-    SET_AUTO_RELOAD_PWM(TIM1_AUTORELOAD);
-    RELOAD_WATCHDOG_COUNTER();
-    SET_PRESCALER_PWM(PRECHARGE_TONE_FREQ_PRESCALER);
-    setCaptureCompare();
-    comStep(6);
-    for (uint8_t v = 2; v < top_volume && ret == 0; v += 2) { // go up in volume gradually
-        SET_DUTY_CYCLE_ALL(v);
-        for (uint32_t j = 0; j < t_step; j++) {
-            RELOAD_WATCHDOG_COUNTER();
-            delayMillis(1);
-            uint16_t bv = precharge_adc();
-            if (bv < (precharge_max_batt - PRECHARGE_DROP_THRESHOLD)) {
-                // quit early if voltage drops too much
-                ret = 1;
-                break;
+    uint32_t converted_voltage = ((ADC_raw_volts * 3300 / 4095 * VOLTAGE_DIVIDER) / 100);
+    prechg_bv_flt_heavy  = (prechg_bv_flt_heavy  == 0) ? converted_voltage : (((31 * prechg_bv_flt_heavy)  + converted_voltage) >> 5);
+    prechg_bv_flt_medium = (prechg_bv_flt_medium == 0) ? converted_voltage : ((( 7 * prechg_bv_flt_medium) + converted_voltage) >> 3);
+    prechg_bv_flt_light  = (prechg_bv_flt_light  == 0) ? converted_voltage : ((( 3 * prechg_bv_flt_light)  + converted_voltage) >> 2);
+
+    #ifdef PRECHARGE_CURRENT_THRESHOLD
+    uint32_t converted_current = ((ADC_raw_current * 3300 / 41) - (CURRENT_OFFSET * 100)) / (MILLIVOLT_PER_AMP);
+    prechg_cur_flt_heavy = ((15 * prechg_cur_flt_heavy) + converted_current) >> 4;
+    #endif
+
+    // track maximum voltage but heavily filtered, wait for settling before the value can be used
+    if (prechg_bv_flt_heavy > prechg_bv_temp_max) {
+        // if a new max is reached, then the voltage has not settled, the capacitor is likely still charging
+        prechg_bv_temp_max = prechg_bv_flt_heavy;
+        prechg_bv_settled_count = 0;
+    }
+    else {
+        // if enough time passed
+        if (prechg_bv_settled_count == PRECHARGE_VOLTAGE_SETTLE_TIME) {
+            if (prechg_bv_settled == 0) {
+                // if first time
+                prechg_bv_settled = prechg_bv_temp_max;
+                prechg_cur_settled = prechg_cur_flt_heavy;
+                prechg_bv_temp_max = 0;
+            }
+            else if (prechg_bv_flt_heavy > prechg_bv_settled) {
+                // if not the first time, perhaps the switch closed completely
+                prechg_bv_settled = prechg_bv_flt_heavy;
+                prechg_bv_temp_max = 0;
+            }
+            prechg_bv_settled_count++;
+        }
+        else if (prechg_bv_settled_count < PRECHARGE_VOLTAGE_SETTLE_TIME) {
+            prechg_bv_settled_count++;
+        }
+    }
+
+    if (prechg_bv_settled != 0) // voltage settled and we want to check
+    {
+        #ifdef PRECHARGE_CURRENT_THRESHOLD
+        // if we are drawing enough current, then the motor is running
+        prechg_motor_running |= (prechg_cur_flt_heavy > prechg_cur_settled && (prechg_cur_flt_heavy - prechg_cur_settled) > PRECHARGE_CURRENT_THRESHOLD);
+        #endif
+        if (armed && input > 50) {
+            prechg_check_stage = 2;
+        }
+        if (prechg_check_stage > 1) {
+            // if the throttle is above 12%, consider the motor to be running
+            prechg_motor_running |= (adjusted_duty_cycle > (tim1_arr / 8) || adjusted_duty_cycle > (TIMER1_MAX_ARR / 8) || adjusted_duty_cycle > (TIM1_AUTORELOAD / 8));
+        }
+
+        if (prechg_motor_running || prechg_check_stage == 1)
+        { // or we are just checking during tone generation (which might not have detectable current)
+            if (prechg_bv_flt_light < (prechg_bv_settled - PRECHARGE_DROP_THRESHOLD))
+            {
+                // test failed
+
+                __disable_irq();
+                RELOAD_WATCHDOG_COUNTER();
+
+                prechg_tripped = 1;
+                armed = 0;
+
+                // actually turn off all motors
+                SET_DUTY_CYCLE_ALL(0);
+                allOff();
+
+                // indicate to user
+                #ifdef USE_LED_STRIP
+                    delayMicros(1000);
+                    send_LED_RGB(0, 0, 128);
+                #endif
+                #ifdef USE_RGB_LED
+                    setIndividualRGBLed(0,0,1);
+                #endif
+                prechg_check_stage = 0; // prevents recursion in next delayMillis call
+                delayMillis(500); // let the LED show for a bit before reset
+                NVIC_SystemReset();
+            }
+            else
+            {
+                prechg_tripped = 0;
+                if (prechg_motor_running) {
+                    // only count the time if the motor is running
+                    prechg_passed_cnt++;
+                    // if we have passed the test for a long period, do not run the test anymore, preventing accidental false positives
+                    if (prechg_passed_cnt >= PRECHARGE_TEST_PASSED_TIME) {
+                        prechg_check_stage = 0;
+                    }
+                }
             }
         }
     }
-    allOff();
-    SET_PRESCALER_PWM(0);
-    signaltimeout = 0;
-    SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
-    __enable_irq();
-
-    SET_DUTY_CYCLE_ALL(beep_volume); // restore for normal operation later
-
-    if (ret) {
-        // force a disarm
-        armed = 0;
-        precharge_state = 1; // indicate check finished and failed
-    }
-    else {
-        precharge_state = 2; // indicate check finished and passed
-    }
-
-    return ret;
-}
-
-uint16_t precharge_adc(void)
-{
-    // returns filtered battery voltage in decivolts
-
-    char data = 0;
-
-    // check if DMA has new data from ADC
-    // NOTE: some of the code don't even check the flag, and just assume the ADC is faster than 1 KHz
-
-    #if defined(STMICRO)
-        #if defined(MCU_F051)
-        if (LL_DMA_IsActiveFlag_TC1(DMA1) != 0) {
-            LL_DMA_ClearFlag_GI1(DMA1);
-        #elif defined(MCU_F031)
-        if (LL_DMA_IsActiveFlag_TC2(DMA1) != 0) {
-            LL_DMA_ClearFlag_GI2(DMA1);
-        #elif defined(MCU_G071)
-        if (LL_DMA_IsActiveFlag_TC2(DMA1) != 0) {
-            LL_DMA_ClearFlag_GI2(DMA1);
-        #elif defined(MCU_G031)
-        if (LL_DMA_IsActiveFlag_TC2(DMA1) != 0) {
-            LL_DMA_ClearFlag_GI2(DMA1);
-        #elif defined(MCU_G431)
-        if (LL_DMA_IsActiveFlag_TC2(DMA1) != 0) {
-            LL_DMA_ClearFlag_GI2(DMA1);
-        #elif defined(MCU_L431)
-        if (LL_DMA_IsActiveFlag_TC1(DMA1) != 0) {
-            LL_DMA_ClearFlag_GI1(DMA1);
-        #else
-        {
-        #endif
-            ADC_DMA_Callback();
-            LL_ADC_REG_StartConversion(ADC1);
-            data = 1;
-        }
-    #elif defined(MCU_GDE23)
-        // don't check DMA, assume ready
-        ADC_DMA_Callback();
-        adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
-        data = 1;
-    #elif defined(ARTERY)
-        if (dma_flag_get(DMA1_FDT1_FLAG) == SET) {
-            DMA1->clr = DMA1_GL1_FLAG;
-            #ifdef USE_ADC
-            ADC_DMA_Callback();
-            adc_ordinary_software_trigger_enable(ADC1, TRUE);
-            data = 1;
-            #endif
-        }
-    #elif defined(WCH)
-        if(DMA_GetITStatus(DMA1_IT_TC1))
-        {
-            DMA_ClearFlag(DMA1_IT_TC1|DMA1_IT_HT1);
-            ADC_DMA_Callback( );
-            startADCConversion()
-            data = 1;
-        }
-    #else
-        ADC_DMA_Callback();
-        data = 1;
-    #endif
-    if (data)
-    {
-        uint32_t current_voltage = ((ADC_raw_volts * 3300 / 4095 * VOLTAGE_DIVIDER) / 100);
-        battery_voltage = (battery_voltage == 0) ? current_voltage : (((3 * battery_voltage) + current_voltage) >> 2);
-    }
-    return battery_voltage;
-}
-
-uint16_t precharge_wait_rise(uint16_t t)
-{
-    // returns maximum battery voltage in decivolts
-
-    uint16_t prev_v = 0;
-    uint16_t max_v = 0;
-    uint32_t t_rem = t;
-    while (t_rem--) {
-        RELOAD_WATCHDOG_COUNTER();
-        delayMillis(1);
-        uint16_t bv = precharge_adc();
-        max_v = (bv > max_v) ? bv : max_v;
-        if (bv > prev_v) {
-            t_rem = t; // reset timer
-        }
-        prev_v = bv;
-    }
-    return max_v;
 }

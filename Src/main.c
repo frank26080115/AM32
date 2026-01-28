@@ -227,6 +227,7 @@ an settings option)
 #include "phaseouts.h"
 #include "serial_telemetry.h"
 #include "kiss_telemetry.h"
+#include "precharge_check.h"
 #include "signal.h"
 #include "sounds.h"
 #include "targets.h"
@@ -384,8 +385,7 @@ uint16_t low_voltage_count = 0;
 uint16_t telem_ms_count;
 
 uint16_t VOLTAGE_DIVIDER = TARGET_VOLTAGE_DIVIDER; // 100k upper and 10k lower resistor in divider
-uint16_t
-    battery_voltage; // scale in volts * 10.  1260 is a battery voltage of 12.60
+uint16_t battery_voltage = 0; // scale in volts * 10.  1260 is a battery voltage of 12.60
 char cell_count = 0;
 char brushed_direction_set = 0;
 
@@ -575,6 +575,8 @@ uint8_t ubAnalogWatchdogStatus = RESET;
 #if defined(NEED_INPUT_READY) || defined(NXP)
 volatile char input_ready = 0;
 #endif
+
+extern char precharge_state;
 
 int32_t doPidCalculations(struct fastPID* pidnow, int actual, int target)
 {
@@ -968,6 +970,9 @@ void startMotor()
         commutation_interval = 10000;
         SET_INTERVAL_TIMER_COUNT(5000);
         running = 1;
+        #ifdef SPECIAL_BUILD_PRECHARGE
+        precharge_stage2();
+        #endif
     }
     enableCompInterrupts();
 }
@@ -1198,6 +1203,9 @@ if (!stepper_sine && armed) {
                     startMotor();
                 }
                 running = 1;
+                #ifdef SPECIAL_BUILD_PRECHARGE
+                precharge_stage2();
+                #endif
                 last_duty_cycle = min_startup_duty;
             }
 
@@ -1359,7 +1367,6 @@ void tenKhzRoutine()
                         if (zero_input_count > 30 || force_arm) {
                             armed = 1;
 #ifdef USE_LED_STRIP
-                            //	send_LED_RGB(0,0,0);
                             delayMicros(1000);
                             send_LED_RGB(0, 255, 0);
 #endif
@@ -1380,6 +1387,7 @@ void tenKhzRoutine()
 															playInputTune();
 #endif
                             }
+
                             if (!servoPwm && !dshot) {
                                 eepromBuffer.rc_car_reverse = 0;
                             }
@@ -1394,22 +1402,6 @@ void tenKhzRoutine()
             }
         }
     }
-
-    #ifdef SPECIAL_BUILD_PRECHARGE
-    if (!armed) {
-        if (precharge_state == 1) { // check has been performed but did not pass
-            #ifdef USE_LED_STRIP
-                delayMicros(1000);
-                send_LED_RGB(0, 0, 128);
-            #endif
-            #ifdef USE_RGB_LED
-                GPIOB->BSRR = LL_GPIO_PIN_3;
-                GPIOB->BSRR = LL_GPIO_PIN_8;
-                GPIOB->BRR = LL_GPIO_PIN_5;
-            #endif
-        }
-    }
-    #endif
 
     if (eepromBuffer.telemetry_on_interval) {
         telem_ms_count++;
@@ -1846,6 +1838,10 @@ int main(void)
         min_startup_duty = min_startup_duty + 50;
     }
 
+#ifdef SPECIAL_BUILD_PRECHARGE
+    precharge_require();
+#endif
+
 #ifdef MCU_F031
     GPIOF->BSRR = LL_GPIO_PIN_6; // uncomment to take bridge out of standby mode
                                  // and set oc level
@@ -2181,7 +2177,12 @@ if(zero_crosses < 5){
 #endif
             if (actual_current < 0) {
                 actual_current = 0;
-            }             
+            }
+
+            #ifdef SPECIAL_BUILD_PRECHARGE
+            precharge_poll(1);
+            #endif
+
             if (eepromBuffer.low_voltage_cut_off == 1) {  
                 if (battery_voltage < (cell_count * low_cell_volt_cutoff)) {
                   low_voltage_count++;
@@ -2326,8 +2327,14 @@ if(zero_crosses < 5){
 
             if (input > 48 && armed) {
                 PROCESS_ADC_FLAG = 1;
-                if (input > 48 && input < 137) { // sine wave stepper
 
+                #ifdef SPECIAL_BUILD_PRECHARGE
+                if (running == 0) {
+                    precharge_stage2();
+                }
+                #endif
+
+                if (input > 48 && input < 137) { // sine wave stepper
                     if (do_once_sinemode) {
                         // disable commutation interrupt in case set
                         DISABLE_COM_TIMER_INT();
