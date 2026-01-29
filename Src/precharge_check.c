@@ -25,6 +25,9 @@
 #define PRECHARGE_VOLTAGE_SETTLE_TIME  200
 // number of milliseconds that the voltage must settle (or start declining) before testing can happen
 
+#define PRECHARGE_TONE_RANDOM_DELAY
+// if multiple ESCs are used behind one switch, it might be good so they don't all perform the test at the same time
+
 extern char armed;
 extern uint8_t running;
 extern uint16_t input;
@@ -80,14 +83,6 @@ void precharge_static_test_p(uint32_t duration, uint32_t volume, uint32_t presca
         return;
     }
     __disable_irq();
-    #if 0
-    // battery voltage must settle before this works
-    while (prechg_bv_settled == 0) {
-        RELOAD_WATCHDOG_COUNTER();
-        delayMicros(1000);
-        precharge_poll(0);
-    }
-    #endif
     RELOAD_WATCHDOG_COUNTER();
     SET_DUTY_CYCLE_ALL(volume);
     SET_AUTO_RELOAD_PWM(TIM1_AUTORELOAD);
@@ -124,6 +119,16 @@ void precharge_static_test(void)
         precharge_poll(0);
     }
     // this is done here so that maybe the volume can be adjusted later according to input voltage
+
+    #ifdef PRECHARGE_TONE_RANDOM_DELAY
+    // random delay so that multiple ESCs don't poll at the same time
+    uint8_t rand_delay = prng8(ADC_raw_volts) & 0x07;
+    for (uint8_t i = 0; i < rand_delay; i++) {
+        RELOAD_WATCHDOG_COUNTER();
+        delayMicros(1000);
+        precharge_poll(0);
+    }
+    #endif
 
     precharge_static_test_p(200,
         TIM1_AUTORELOAD / 4, 20,
