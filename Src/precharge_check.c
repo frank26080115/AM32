@@ -1,3 +1,4 @@
+#include "precharge_check.h"
 #include "sounds.h"
 #include "common.h"
 #include "eeprom.h"
@@ -6,12 +7,12 @@
 #include "phaseouts.h"
 #include "targets.h"
 
-#define PRECHARGE_DROP_THRESHOLD_RUNNING   200//580
+#define PRECHARGE_DROP_THRESHOLD_RUNNING   400//580
 // threshold for pass or fail the precharge check
 // if the battery voltage drops this much due to running motor, then the test fails
 // unit is centivolts, volts*100, example: 580 means 5.8 volts, which is 39ohms and 150mA (this is under 1W)
 
-#define PRECHARGE_DROP_THRESHOLD_TONE      100
+#define PRECHARGE_DROP_THRESHOLD_TONE      25
 // if the battery voltage drops this much due to static tone, then the test fails
 
 //#define PRECHARGE_CURRENT_THRESHOLD    10
@@ -35,6 +36,7 @@ extern uint16_t adjusted_duty_cycle;
 extern uint16_t tim1_arr;
 
 extern void ADC_DMA_Callback(void);
+extern void setCaptureCompare(void);
 
 char prechg_check_stage = 0;
 char prechg_tripped = 0;
@@ -86,8 +88,9 @@ void precharge_static_test_p(uint32_t duration, uint32_t volume, uint32_t presca
     SET_DUTY_CYCLE_ALL(volume);
     SET_AUTO_RELOAD_PWM(TIM1_AUTORELOAD);
     setCaptureCompare();
-    comStep(step);
     SET_PRESCALER_PWM(prescaler);
+    step = (step % 6) + 1;
+    comStep(step);
     for (uint32_t i = 0; i < duration; i++)
     {
         RELOAD_WATCHDOG_COUNTER();
@@ -103,6 +106,8 @@ void precharge_static_test_p(uint32_t duration, uint32_t volume, uint32_t presca
 
 void precharge_static_test(void)
 {
+    #ifdef PRECHARGE_DROP_THRESHOLD_TONE
+
     if (prechg_check_stage == 0) {
         // this means check is not needed
         return;
@@ -116,7 +121,11 @@ void precharge_static_test(void)
     }
     // this is done here so that maybe the volume can be adjusted later according to input voltage
 
-    precharge_static_test_p(200, TIM1_AUTORELOAD / 4, 0, 1);
+    precharge_static_test_p(200,
+        TIM1_AUTORELOAD / 4, 20,
+        ADC_raw_volts & 0x3F);
+
+    #endif
 }
 
 void precharge_poll(char force)
@@ -228,9 +237,17 @@ void precharge_poll(char force)
         }
 
         if (motor_running || prechg_check_stage == 1)
-        { // or we are just checking during tone generation (which might not have detectable current)
-
-            uint32_t drop_thresh = (prechg_check_stage == 1) ? PRECHARGE_DROP_THRESHOLD_TONE : PRECHARGE_DROP_THRESHOLD_RUNNING;
+        {
+            uint32_t drop_thresh = (prechg_check_stage == 1) ?
+                #if defined(PRECHARGE_DROP_THRESHOLD_RUNNING) && defined(PRECHARGE_DROP_THRESHOLD_TONE)
+                    PRECHARGE_DROP_THRESHOLD_TONE : PRECHARGE_DROP_THRESHOLD_RUNNING;
+                #elif defined(PRECHARGE_DROP_THRESHOLD_TONE)
+                    PRECHARGE_DROP_THRESHOLD_TONE : (prechg_bv_settled / 4);
+                #elif defined(PRECHARGE_DROP_THRESHOLD_RUNNING)
+                    (prechg_bv_settled / 4) : PRECHARGE_DROP_THRESHOLD_RUNNING;
+                #else
+                    #error missing threshold
+                #endif
 
             if (prechg_bv_flt_light < (prechg_bv_settled - drop_thresh))
             {
