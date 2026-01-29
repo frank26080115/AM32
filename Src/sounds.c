@@ -133,9 +133,11 @@ comStep(3);
         SET_PRESCALER_PWM(40); // next beep is higher frequency
         delayMillis(200);
 
+        #ifndef SPECIAL_BUILD_PRECHARGE
         comStep(6);
         SET_PRESCALER_PWM(25); // higher again..
         delayMillis(200);
+        #endif
 
         allOff(); // turn all channels low again
         SET_PRESCALER_PWM(0); // set prescaler back to 0.
@@ -145,7 +147,9 @@ comStep(3);
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
     __enable_irq();
 
+    #ifdef SPECIAL_BUILD_PRECHARGE
     precharge_static_test();
+    #endif
 }
 
 void playBrushedStartupTune()
@@ -209,15 +213,19 @@ void playInputTune2()
     delayMillis(75);
     SET_PRESCALER_PWM(80);
     delayMillis(75);
+    #ifndef SPECIAL_BUILD_PRECHARGE
     SET_PRESCALER_PWM(90);
     RELOAD_WATCHDOG_COUNTER();
     delayMillis(75);
+    #endif
     allOff();
     SET_PRESCALER_PWM(0);
     signaltimeout = 0;
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
     __enable_irq();
+    #ifdef SPECIAL_BUILD_PRECHARGE
     precharge_static_test();
+    #endif
 }
 
 void playInputTune()
@@ -231,14 +239,18 @@ void playInputTune()
     delayMillis(100);
     SET_PRESCALER_PWM(70);
     delayMillis(100);
+    #ifndef SPECIAL_BUILD_PRECHARGE
     SET_PRESCALER_PWM(40);
     delayMillis(100);
+    #endif
     allOff();
     SET_PRESCALER_PWM(0);
     signaltimeout = 0;
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
     __enable_irq();
+    #ifdef SPECIAL_BUILD_PRECHARGE
     precharge_static_test();
+    #endif
 }
 
 void playDefaultTone()
@@ -249,13 +261,17 @@ void playDefaultTone()
     comStep(2);
     delayMillis(150);
     RELOAD_WATCHDOG_COUNTER();
+    #ifndef SPECIAL_BUILD_PRECHARGE
     SET_PRESCALER_PWM(30);
     delayMillis(150);
+    #endif
     allOff();
     SET_PRESCALER_PWM(0);
     signaltimeout = 0;
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
+    #ifdef SPECIAL_BUILD_PRECHARGE
     precharge_static_test();
+    #endif
 }
 
 void playChangedTone()
