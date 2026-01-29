@@ -66,7 +66,11 @@ void precharge_stage2(void)
         //prechg_passed_cnt = 0;
         prechg_tripped = 0;
     }
+    #if defined(PRECHARGE_DROP_THRESHOLD_RUNNING)
     prechg_check_stage = 2;
+    #else
+    prechg_check_stage = 0;
+    #endif
 }
 
 void precharge_static_test_p(uint32_t duration, uint32_t volume, uint32_t prescaler, uint8_t step)
@@ -229,7 +233,12 @@ void precharge_poll(char force)
         motor_running |= (prechg_cur_flt_heavy > prechg_cur_settled && (prechg_cur_flt_heavy - prechg_cur_settled) > PRECHARGE_CURRENT_THRESHOLD);
         #endif
         if (armed && input > 50) {
-            prechg_check_stage = 2;
+            #if defined(PRECHARGE_DROP_THRESHOLD_RUNNING)
+                prechg_check_stage = 2;
+            #else
+                prechg_check_stage = 0;
+                return;
+            #endif
         }
         if (prechg_check_stage > 1) {
             // if the throttle is above 12%, consider the motor to be running
@@ -242,7 +251,7 @@ void precharge_poll(char force)
                 #if defined(PRECHARGE_DROP_THRESHOLD_RUNNING) && defined(PRECHARGE_DROP_THRESHOLD_TONE)
                     PRECHARGE_DROP_THRESHOLD_TONE : PRECHARGE_DROP_THRESHOLD_RUNNING;
                 #elif defined(PRECHARGE_DROP_THRESHOLD_TONE)
-                    PRECHARGE_DROP_THRESHOLD_TONE : (prechg_bv_settled / 4);
+                    PRECHARGE_DROP_THRESHOLD_TONE : (prechg_bv_settled / 2);
                 #elif defined(PRECHARGE_DROP_THRESHOLD_RUNNING)
                     (prechg_bv_settled / 4) : PRECHARGE_DROP_THRESHOLD_RUNNING;
                 #else
