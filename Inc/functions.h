@@ -15,6 +15,8 @@ uint32_t getAbsDif(int number1, int number2);
 void delayMicros(uint32_t micros);
 void delayMillis(uint32_t millis);
 long map(long x, long in_min, long in_max, long out_min, long out_max);
+uint8_t prng8(uint8_t seed);
+
 #ifdef ARTERY
 void gpio_mode_QUICK(gpio_type* gpio_periph, uint32_t mode,
     uint32_t pull_up_down, uint32_t pin);

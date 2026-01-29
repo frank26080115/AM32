@@ -143,3 +143,13 @@ void gpio_mode_QUICK(gpio_type* gpio_periph, uint32_t mode,
     __enable_irq();
 }
 #endif
+
+uint8_t prng8(uint8_t seed)
+{
+    if (seed == 0) seed = 0xA5;
+    seed ^= (seed & 1u) << 7;
+    seed ^= seed << 3;
+    seed ^= seed >> 5;
+    seed *= 0xB5;
+    return seed;
+}
