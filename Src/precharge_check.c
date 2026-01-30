@@ -7,7 +7,7 @@
 #include "phaseouts.h"
 #include "targets.h"
 
-#define PRECHARGE_DROP_THRESHOLD_RUNNING   400//580
+//#define PRECHARGE_DROP_THRESHOLD_RUNNING   400//580
 // threshold for pass or fail the precharge check
 // if the battery voltage drops this much due to running motor, then the test fails
 // unit is centivolts, volts*100, example: 580 means 5.8 volts, which is 39ohms and 150mA (this is under 1W)
@@ -55,6 +55,9 @@ uint32_t prechg_passed_cnt = 0;
 
 void precharge_require(void)
 {
+    #if !defined(PRECHARGE_DROP_THRESHOLD_RUNNING) && !defined(PRECHARGE_DROP_THRESHOLD_TONE)
+    return;
+    #endif
     prechg_check_stage = 1;
     prechg_passed_cnt = 0;
     prechg_tripped = 0;
@@ -237,7 +240,7 @@ void precharge_poll(char force)
         // if we are drawing enough current, then the motor is running
         motor_running |= (prechg_cur_flt_heavy > prechg_cur_settled && (prechg_cur_flt_heavy - prechg_cur_settled) > PRECHARGE_CURRENT_THRESHOLD);
         #endif
-        if (armed && input > 50) {
+        if (armed && running && input > 50) {
             #if defined(PRECHARGE_DROP_THRESHOLD_RUNNING)
                 prechg_check_stage = 2;
             #else
@@ -256,14 +259,14 @@ void precharge_poll(char force)
                 #if defined(PRECHARGE_DROP_THRESHOLD_RUNNING) && defined(PRECHARGE_DROP_THRESHOLD_TONE)
                     PRECHARGE_DROP_THRESHOLD_TONE : PRECHARGE_DROP_THRESHOLD_RUNNING;
                 #elif defined(PRECHARGE_DROP_THRESHOLD_TONE)
-                    PRECHARGE_DROP_THRESHOLD_TONE : (prechg_bv_settled / 2);
+                    PRECHARGE_DROP_THRESHOLD_TONE : 0;
                 #elif defined(PRECHARGE_DROP_THRESHOLD_RUNNING)
-                    (prechg_bv_settled / 4) : PRECHARGE_DROP_THRESHOLD_RUNNING;
+                    0 : PRECHARGE_DROP_THRESHOLD_RUNNING;
                 #else
-                    #error missing threshold
+                    0 : 0;
                 #endif
 
-            if (prechg_bv_flt_light < (prechg_bv_settled - drop_thresh))
+            if (prechg_bv_flt_light < (prechg_bv_settled - drop_thresh) && drop_thresh > 0)
             {
                 // test failed
 
@@ -277,16 +280,17 @@ void precharge_poll(char force)
                 SET_DUTY_CYCLE_ALL(0);
                 allOff();
 
+                prechg_check_stage = 0; // prevents recursion in next delayMillis call
                 // indicate to user
                 #ifdef USE_LED_STRIP
                     delayMicros(1000);
                     send_LED_RGB(0, 0, 128);
+                    delayMillis(500); // let the LED show for a bit before reset
                 #endif
                 #ifdef USE_RGB_LED
                     setIndividualRGBLed(0,0,1);
+                    delayMillis(500); // let the LED show for a bit before reset
                 #endif
-                prechg_check_stage = 0; // prevents recursion in next delayMillis call
-                delayMillis(500); // let the LED show for a bit before reset
                 NVIC_SystemReset();
             }
             else
