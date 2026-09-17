@@ -7,6 +7,16 @@
 #include "phaseouts.h"
 #include "targets.h"
 
+#ifdef SPECIAL_BUILD_PRECHARGE
+
+#ifdef USE_LED_STRIP
+#ifdef NXP
+#include "apa102.h"
+#else
+#include "WS2812.h"
+#endif
+#endif
+
 //#define PRECHARGE_DROP_THRESHOLD_RUNNING   400//580
 // threshold for pass or fail the precharge check
 // if the battery voltage drops this much due to running motor, then the test fails
@@ -308,3 +318,5 @@ void precharge_poll(char force)
         }
     }
 }
+
+#endif
