@@ -8,7 +8,7 @@
 // The E230 application region is only 27 KiB, and the A153 implementation
 // does not provide the phase-current sampling needed by the precharge check.
 #if !defined(GD32E230) && !defined(MCXA153)
-#define SPECIAL_BUILD_PRECHARGE
+//#define SPECIAL_BUILD_PRECHARGE
 #endif
 
 extern EEprom_t eepromBuffer;
