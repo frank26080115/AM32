@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /*
  * mcxa153_it.c
  *
@@ -132,7 +133,14 @@ void CTIMER1_IRQHandler(void)
 void LPTMR0_IRQHandler(void)
 {
 	//Call loop function from main.c
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+	slowDshotSamplePin();
+	if (slowDshotControlTick()) {
+	    tenKhzRoutine();
+	}
+#else
 	tenKhzRoutine();
+#endif
 
 	//Clear timer compare flag
 	modifyReg32(&LPTMR0->CSR, LPTMR_CSR_TCF_MASK, LPTMR_CSR_TCF(1));

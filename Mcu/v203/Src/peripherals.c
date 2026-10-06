@@ -9,6 +9,7 @@
 
 // PERIPHERAL SETUP
 #include "peripherals.h"
+#include "dshot_slow.h"
 
 #include "ADC.h"
 #include "common.h"
@@ -30,6 +31,11 @@ void initCorePeripherals(void)
     UN_TIM2_Init( );
 #ifdef USE_SERIAL_TELEMETRY
     telem_UART_Init();
+#endif
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInitPin();
+    slowDshotInitTimer();
 #endif
 }
 
@@ -294,6 +300,7 @@ void MX_GPIO_Init(void)
 
 void UN_TIM2_Init(void) //IC Timer Init
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     GPIO_InitTypeDef         GPIO_InitStruct = {0};
     TIM_TimeBaseInitTypeDef  TIM_InitStruct = {0};
     TIM_ICInitTypeDef        TIM_ICInitStructure = {0};
@@ -324,6 +331,7 @@ void UN_TIM2_Init(void) //IC Timer Init
     TIM_ICInit(TIM2, &TIM_ICInitStructure);
 
     TIM_DMACmd(TIM2, TIM_DMA_CC1, ENABLE);
+#endif
 }
 
 #ifdef USE_RGB_LED // has 3 color led
@@ -470,9 +478,7 @@ void enableCorePeripherals()
     ADCInit();
 #endif
 
-#ifdef USE_ADC_INPUT
-
-#else
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
     TIM_CCxCmd(IC_TIMER_REGISTER, TIM_Channel_1, TIM_CCx_Enable);  // input capture and output compare
     TIM_Cmd(IC_TIMER_REGISTER,ENABLE);
 #endif

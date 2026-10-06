@@ -8,6 +8,7 @@
 // PERIPHERAL SETUP
 
 #include "peripherals.h"
+#include "dshot_slow.h"
 #include "serial_telemetry.h"
 #include "ADC.h"
 #include "targets.h"
@@ -29,6 +30,11 @@ void initCorePeripherals(void)
     UN_TIM_Init();
 #ifdef USE_SERIAL_TELEMETRY
     telem_UART_Init();
+#endif
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInitPin();
+    slowDshotInitTimer();
 #endif
 }
 
@@ -332,12 +338,12 @@ void TEN_KHZ_Timer_Init()
     LL_TIM_EnableARRPreload(TIM16);
     NVIC_SetPriority(TIM16_IRQn, 2);
     NVIC_EnableIRQ(TIM16_IRQn);
-
 #endif
 }
 
 void UN_TIM_Init(void)
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     LL_TIM_InitTypeDef TIM_InitStruct = { 0 };
 
     LL_GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -420,6 +426,7 @@ void UN_TIM_Init(void)
         LL_TIM_IC_FILTER_FDIV1);
     LL_TIM_IC_SetPolarity(IC_TIMER_REGISTER, IC_TIMER_CHANNEL,
         LL_TIM_IC_POLARITY_BOTHEDGE);
+#endif
 }
 
 void UN_GPIO_Init(void)
@@ -571,9 +578,7 @@ void enableCorePeripherals()
     /* Force update generation */
     LL_TIM_GenerateEvent_UPDATE(TIM1);
 
-#ifdef USE_ADC_INPUT
-
-#else
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
     LL_TIM_CC_EnableChannel(IC_TIMER_REGISTER,
     IC_TIMER_CHANNEL); // input capture and output compare
     LL_TIM_EnableCounter(IC_TIMER_REGISTER);

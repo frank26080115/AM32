@@ -6,6 +6,7 @@
  */
 
 #include "peripherals.h"
+#include "dshot_slow.h"
 
 void initCorePeripherals(void)
 {
@@ -16,7 +17,7 @@ void initCorePeripherals(void)
 
 	initFlexPWM();
 
-#ifndef USE_ADC_INPUT
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
 	initDshotPWMTimer();
 	initDMA_DshotPWM();
 	initSPI();
@@ -47,6 +48,10 @@ void initCorePeripherals(void)
 
 	NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);	//TODO check if this is needed or what it does
 
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInitPin();
+    slowDshotInitTimer();
+#endif
 }
 
 void initAfterJump()
@@ -325,7 +330,7 @@ void enableCorePeripherals()
 	enableFlexPWM();
 
 	//Enable the timers
-#ifndef USE_ADC_INPUT
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
 	enableDMA_DshotPWM();
 	enableDshotPWMTimer();
 #endif

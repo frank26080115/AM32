@@ -74,7 +74,9 @@ void computeDshotDMA()
     dshot_frametime = dma_buffer[31] - dma_buffer[0];
     halfpulsetime = dshot_frametime >> 5;
     if ((dshot_frametime > dshot_frametime_low) && (dshot_frametime < dshot_frametime_high)) {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
 			signaltimeout = 0;
+#endif
         for (int i = 0; i < 16; i++) {
             // note that dma_buffer[] is uint32_t, we cast the difference to uint16_t to handle
             // timer wrap correctly
@@ -84,6 +86,7 @@ void computeDshotDMA()
         uint8_t calcCRC = ((dpulse[0] ^ dpulse[4] ^ dpulse[8]) << 3 | (dpulse[1] ^ dpulse[5] ^ dpulse[9]) << 2 | (dpulse[2] ^ dpulse[6] ^ dpulse[10]) << 1 | (dpulse[3] ^ dpulse[7] ^ dpulse[11]));
         uint8_t checkCRC = (dpulse[12] << 3 | dpulse[13] << 2 | dpulse[14] << 1 | dpulse[15]);
 
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
         if (!armed) {
             if (dshot_telemetry == 0) {
                 if (getInputPinState()) { // if the pin is high for 100 checks between
@@ -99,14 +102,18 @@ void computeDshotDMA()
             checkCRC = ~checkCRC + 16;
         }
 
+#endif
+
         int tocheck = (dpulse[0] << 10 | dpulse[1] << 9 | dpulse[2] << 8 | dpulse[3] << 7 | dpulse[4] << 6 | dpulse[5] << 5 | dpulse[6] << 4 | dpulse[7] << 3 | dpulse[8] << 2 | dpulse[9] << 1 | dpulse[10]);
 
         if (calcCRC == checkCRC) {
             signaltimeout = 0;
             dshot_goodcounts++;
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
             if (dpulse[11] == 1) {
                 send_telemetry = 1;
             }
+#endif
             if(programming_mode > 0){  
                 if(programming_mode == 1){ // begin programming mode
                     position = tocheck;    // eepromBuffer position

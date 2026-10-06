@@ -8,6 +8,7 @@
 // PERIPHERAL SETUP
 
 #include "peripherals.h"
+#include "dshot_slow.h"
 
 #include "serial_telemetry.h"
 #include "targets.h"
@@ -48,6 +49,11 @@ void initCorePeripherals(void)
     telem_UART_Init();
 #ifdef USE_LED_STRIP
     WS2812_Init();
+#endif
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInitPin();
+    slowDshotInitTimer();
 #endif
 }
 
@@ -751,9 +757,7 @@ void enableCorePeripherals()
     /* Force update generation */
     LL_TIM_GenerateEvent_UPDATE(TIM1);
 
-#ifdef USE_ADC_INPUT
-
-#else
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
     LL_TIM_CC_EnableChannel(IC_TIMER_REGISTER,
         IC_TIMER_CHANNEL); // input capture and output compare
     LL_TIM_EnableCounter(IC_TIMER_REGISTER);

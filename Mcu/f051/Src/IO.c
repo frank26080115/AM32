@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /*
  * IO.c
  *
@@ -20,6 +21,7 @@ uint8_t buffer_padding = 0;
 
 void receiveDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     out_put = 0;
 #ifdef USE_TIMER_3_CHANNEL_1
     RCC->APB1RSTR |= LL_APB1_GRP1_PERIPH_TIM3;
@@ -51,10 +53,12 @@ void receiveDshotDma()
     IC_TIMER_REGISTER->DIER |= TIM_DIER_CC1DE;
     IC_TIMER_REGISTER->CCER |= IC_TIMER_CHANNEL;
     IC_TIMER_REGISTER->CR1 |= TIM_CR1_CEN;
+#endif
 }
 
 void sendDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     out_put = 1;
 #ifdef USE_TIMER_3_CHANNEL_1
     //          // de-init timer 2
@@ -91,6 +95,7 @@ void sendDshotDma()
     IC_TIMER_REGISTER->CCER |= IC_TIMER_CHANNEL;
     IC_TIMER_REGISTER->BDTR |= TIM_BDTR_MOE;
     IC_TIMER_REGISTER->CR1 |= TIM_CR1_CEN;
+#endif
 }
 
 uint8_t getInputPinState() { return (INPUT_PIN_PORT->IDR & INPUT_PIN); }
@@ -116,3 +121,17 @@ void setInputPullNone()
 {
     LL_GPIO_SetPinPull(INPUT_PIN_PORT, INPUT_PIN, LL_GPIO_PULL_NO);
 }
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+void slowDshotInitPin(void)
+{
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB);
+    LL_GPIO_SetPinMode(INPUT_PIN_PORT, INPUT_PIN, LL_GPIO_MODE_INPUT);
+    LL_GPIO_SetPinPull(INPUT_PIN_PORT, INPUT_PIN, LL_GPIO_PULL_DOWN);
+}
+
+uint8_t slowDshotReadPin(void)
+{
+    return (INPUT_PIN_PORT->IDR & INPUT_PIN) != 0;
+}
+#endif

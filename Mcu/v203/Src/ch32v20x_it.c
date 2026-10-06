@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /********************************** (C) COPYRIGHT *******************************
  * File Name          : ch32v20x_it.c
  * Author             : WCH
@@ -153,7 +154,14 @@ void DMA1_Channel7_IRQHandler(void)
 void SysTick_Handler(void)
 {
     SysTick->SR = 0;
-    tenKhzRoutine( );
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+slowDshotSamplePin();
+if (slowDshotControlTick()) {
+    tenKhzRoutine();
+}
+#else
+tenKhzRoutine();
+#endif
 }
 
 //for cmp

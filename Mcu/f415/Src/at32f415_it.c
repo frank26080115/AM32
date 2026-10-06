@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 extern void transfercomplete();
 extern void PeriodElapsedCallback();
 extern void interruptRoutine();
@@ -186,7 +187,14 @@ void TMR1_BRK_TMR9_IRQHandler(void)
     TMR9->ists = (uint16_t)~TMR_OVF_FLAG;
     TMR1->ists = 0x00;
     //		timer_interrupt_flag_clear(TIMER13, TIMER_INT_FLAG_UP);
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotSamplePin();
+    if (slowDshotControlTick()) {
+        tenKhzRoutine();
+    }
+#else
     tenKhzRoutine();
+#endif
 
     /* USER CODE END TIM6_DAC_IRQn 0 */
 

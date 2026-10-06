@@ -11,6 +11,7 @@
 #define KR_KEY_Enable ((uint16_t)0xCCCC)
 
 #include "peripherals.h"
+#include "dshot_slow.h"
 
 #include "ADC.h"
 #include "common.h"
@@ -44,6 +45,11 @@ void initCorePeripherals(void)
 #ifdef USE_RGB_LED
     LED_GPIO_init();
 #endif 
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInitPin();
+    slowDshotInitTimer();
+#endif
 }
 
 void initAfterJump(void) { __enable_irq(); }
@@ -206,6 +212,7 @@ void MX_GPIO_Init(void) { }
 
 void UN_TIM_Init(void)
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
 #ifdef USE_TIMER_3_CHANNEL_1
     crm_periph_clock_enable(CRM_GPIOB_PERIPH_CLOCK, TRUE);
     crm_periph_clock_enable(CRM_TMR3_PERIPH_CLOCK, TRUE);
@@ -229,6 +236,7 @@ void UN_TIM_Init(void)
     IC_TIMER_REGISTER->div = 16;
     IC_TIMER_REGISTER->ctrl1_bit.prben = TRUE;
     IC_TIMER_REGISTER->ctrl1_bit.tmren = TRUE;
+#endif
 }
 
 void reloadWatchDogCounter()
@@ -317,9 +325,7 @@ void enableCorePeripherals()
     ADC_Init();
 #endif
 
-#ifdef USE_ADC_INPUT
-
-#else
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
     tmr_channel_enable(IC_TIMER_REGISTER, IC_TIMER_CHANNEL, TRUE);
     IC_TIMER_REGISTER->ctrl1_bit.tmren = TRUE;
 #endif

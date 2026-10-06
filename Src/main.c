@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 
 /* AM32- multi-purpose brushless controller firmware for the stm32f051 */
 
@@ -1574,6 +1575,8 @@ void tenKhzRoutine()
 
 void processDshot()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
+
     if (compute_dshot_flag == 1) {
         computeDshotDMA();
         compute_dshot_flag = 0;
@@ -1588,6 +1591,8 @@ void processDshot()
         return;
     }
     setInput();
+
+#endif
 }
 
 void advanceincrement()
@@ -1908,7 +1913,11 @@ int main(void)
 
 #else
     // checkForHighSignal();     // will reboot if signal line is high for 10ms
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInit();
+#else
     receiveDshotDma();
+#endif
     if (drive_by_rpm) {
         use_speed_control_loop = 1;
     }
@@ -1947,7 +1956,12 @@ e_com_time = ((commutation_intervals[0] + commutation_intervals[1] + commutation
         setInput();
 #endif
 
-#ifdef NEED_INPUT_READY
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    if (slow_dshot_input_ready) {
+        slow_dshot_input_ready = 0;
+        setInput();
+    }
+#elif defined(NEED_INPUT_READY)
  #ifdef MCU_F031
     if (input_ready) {
     setInput(); 
@@ -2088,7 +2102,7 @@ if(zero_crosses < 5){
             last_average_interval = average_interval;
         }
 
-#if !defined(MCU_G031) && !defined(NEED_INPUT_READY)
+#if !defined(MCU_G031) && !defined(NEED_INPUT_READY) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
 #ifdef NXP
 	if (dshot_telemetry && (commutation_interval > DSHOT_PRIORITY_THRESHOLD)) {
 		NVIC_SetPriority(IC_DMA_IRQ_NAME, 0);

@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /*
  * IO.c
  *
@@ -25,6 +26,7 @@ uint8_t buffer_padding = 0;
 
 void changeToOutput()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     LL_DMA_SetDataTransferDirection(DMA1, INPUT_DMA_CHANNEL,
     LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
 
@@ -59,10 +61,12 @@ void changeToOutput()
     IC_TIMER_REGISTER->ARR = 61;
     out_put = 1;
     LL_TIM_GenerateEvent_UPDATE(IC_TIMER_REGISTER);
+#endif
 }
 
 void changeToInput()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     LL_DMA_SetDataTransferDirection(DMA1, INPUT_DMA_CHANNEL,
         LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
 
@@ -96,10 +100,12 @@ void changeToInput()
     LL_TIM_GenerateEvent_UPDATE(IC_TIMER_REGISTER);
     out_put = 0;
     //  TIM2->CCER = 0xa;
+#endif
 }
 
 void sendDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     changeToOutput();
 #ifdef USE_TIMER_2_CHANNEL_1
     LL_DMA_ConfigAddresses(
@@ -149,10 +155,12 @@ void sendDshotDma()
     LL_TIM_CC_EnableChannel(IC_TIMER_REGISTER, IC_TIMER_CHANNEL);
     LL_TIM_EnableAllOutputs(IC_TIMER_REGISTER);
     LL_TIM_EnableCounter(IC_TIMER_REGISTER);
+#endif
 }
 
 void receiveDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     changeToInput();
     IC_TIMER_REGISTER->CNT = 0;
 #ifdef USE_TIMER_2_CHANNEL_4
@@ -203,6 +211,7 @@ void receiveDshotDma()
     LL_TIM_CC_EnableChannel(IC_TIMER_REGISTER, IC_TIMER_CHANNEL);
     LL_TIM_EnableCounter(IC_TIMER_REGISTER);
     //   TIM16->PSC = 1;
+#endif
 }
 
 // void detectInput(){
@@ -446,3 +455,17 @@ void setInputPullNone()
 //	}
 //	}
 //}
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+void slowDshotInitPin(void)
+{
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB);
+    LL_GPIO_SetPinMode(INPUT_PIN_PORT, INPUT_PIN, LL_GPIO_MODE_INPUT);
+    LL_GPIO_SetPinPull(INPUT_PIN_PORT, INPUT_PIN, LL_GPIO_PULL_DOWN);
+}
+
+uint8_t slowDshotReadPin(void)
+{
+    return (INPUT_PIN_PORT->IDR & INPUT_PIN) != 0;
+}
+#endif

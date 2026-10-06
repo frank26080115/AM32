@@ -5,6 +5,12 @@
 
 #define SPECIAL_BUILD_ALWAYS_ARMED
 
+// Fixed-interval, non-inverted DShot input; EEPROM input_type must be DSHOT_IN.
+#define SPECIAL_BUILD_SLOW_DSHOT
+#ifndef SLOW_DSHOT_SAMPLE_HZ
+#define SLOW_DSHOT_SAMPLE_HZ 20000
+#endif
+
 // The E230 application region is only 27 KiB, and the A153 implementation
 // does not provide the phase-current sampling needed by the precharge check.
 #if !defined(GD32E230) && !defined(MCXA153)

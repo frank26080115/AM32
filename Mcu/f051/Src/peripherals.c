@@ -8,6 +8,7 @@
 // PERIPHERAL SETUP
 
 #include "peripherals.h"
+#include "dshot_slow.h"
 
 #include "ADC.h"
 #include "serial_telemetry.h"
@@ -33,6 +34,11 @@ void initCorePeripherals(void)
 #endif
 #ifdef USE_RGB_LED
   LED_GPIO_init();
+#endif
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInitPin();
+    slowDshotInitTimer();
 #endif
 }
 
@@ -364,6 +370,7 @@ void MX_GPIO_Init(void)
 
 void UN_TIM_Init(void)
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     // LL_TIM_InitTypeDef TIM_InitStruct = {0};
 
     LL_GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -447,6 +454,7 @@ void UN_TIM_Init(void)
     // LL_TIM_IC_SetFilter(IC_TIMER_REGISTER, IC_TIMER_CHANNEL,
     // LL_TIM_IC_FILTER_FDIV1); LL_TIM_IC_SetPolarity(IC_TIMER_REGISTER,
     // IC_TIMER_CHANNEL, LL_TIM_IC_POLARITY_BOTHEDGE);
+#endif
 }
 
 #ifdef USE_RGB_LED // has 3 color led
@@ -583,9 +591,7 @@ void enableCorePeripherals()
     /* Force update generation */
     LL_TIM_GenerateEvent_UPDATE(TIM1);
 
-#ifdef USE_ADC_INPUT
-
-#else
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
     LL_TIM_CC_EnableChannel(IC_TIMER_REGISTER,
         IC_TIMER_CHANNEL); // input capture and output compare
     LL_TIM_EnableCounter(IC_TIMER_REGISTER);

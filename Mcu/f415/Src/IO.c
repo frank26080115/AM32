@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /*
  * IO.c
  *
@@ -21,6 +22,7 @@ uint8_t buffer_padding = 7;
 
 void changeToOutput()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     INPUT_DMA_CHANNEL->ctrl |= DMA_DIR_MEMORY_TO_PERIPHERAL;
     tmr_reset(IC_TIMER_REGISTER);
 #ifdef USE_TIMER_3_CHANNEL_1
@@ -35,10 +37,12 @@ void changeToOutput()
     IC_TIMER_REGISTER->pr = 95;
     out_put = 1;
     IC_TIMER_REGISTER->swevt_bit.ovfswtr = TRUE;
+#endif
 }
 
 void changeToInput()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     gpio_mode_QUICK(INPUT_PIN_PORT, GPIO_MODE_INPUT, GPIO_PULL_NONE, INPUT_PIN);
     INPUT_DMA_CHANNEL->ctrl |= DMA_DIR_PERIPHERAL_TO_MEMORY;
     GPIOB->scr = INPUT_PIN;
@@ -58,9 +62,11 @@ void changeToInput()
 
     IC_TIMER_REGISTER->swevt_bit.ovfswtr = TRUE;
     out_put = 0;
+#endif
 }
 void receiveDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     changeToInput();
 #ifdef USE_TIMER_3_CHANNEL_1
 	INPUT_DMA_CHANNEL->paddr = (uint32_t)&IC_TIMER_REGISTER->c1dt;
@@ -74,10 +80,12 @@ void receiveDshotDma()
     INPUT_DMA_CHANNEL->dtcnt = buffersize;
 	IC_TIMER_REGISTER->ctrl1_bit.tmren = TRUE;
     INPUT_DMA_CHANNEL->ctrl = 0x0000098b;
+#endif
 }
 
 void sendDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     changeToOutput();
 #ifdef USE_TIMER_3_CHANNEL_1
     INPUT_DMA_CHANNEL->paddr = (uint32_t)&IC_TIMER_REGISTER->c1dt;
@@ -95,6 +103,7 @@ void sendDshotDma()
     IC_TIMER_REGISTER->brk_bit.oen = TRUE;
     IC_TIMER_REGISTER->ctrl1_bit.tmren = TRUE;
     gpio_mode_QUICK(INPUT_PIN_PORT, GPIO_MODE_MUX, GPIO_PULL_NONE, INPUT_PIN);
+#endif
 }
 
 
@@ -120,3 +129,17 @@ void setInputPullNone()
 {
     gpio_mode_QUICK(INPUT_PIN_PORT, GPIO_MODE_MUX, GPIO_PULL_NONE, INPUT_PIN);
 }
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+void slowDshotInitPin(void)
+{
+    crm_periph_clock_enable(CRM_GPIOA_PERIPH_CLOCK, TRUE);
+    crm_periph_clock_enable(CRM_GPIOB_PERIPH_CLOCK, TRUE);
+    gpio_mode_QUICK(INPUT_PIN_PORT, GPIO_MODE_INPUT, GPIO_PULL_DOWN, INPUT_PIN);
+}
+
+uint8_t slowDshotReadPin(void)
+{
+    return (INPUT_PIN_PORT->idt & INPUT_PIN) != 0;
+}
+#endif

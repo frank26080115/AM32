@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /*
  * IO.c
  *
@@ -20,6 +21,7 @@ uint8_t buffer_padding = 7;
 
 void changeToOutput()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
 //    tmr_reset;
     INPUT_PIN_PORT->BSHR  = INPUT_PIN;
     uint32_t mul = INPUT_PIN*INPUT_PIN*INPUT_PIN*INPUT_PIN;
@@ -40,10 +42,12 @@ void changeToOutput()
     IC_TIMER_REGISTER->ATRLR   = 63;                //48MHz / output_timer_prescaler / (63+1)
     out_put = 1;
     TIM_GenerateEvent(IC_TIMER_REGISTER,TIM_EventSource_Update);
+#endif
 }
 
 void changeToInput()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     RCC_APB1PeriphResetCmd(RCC_APB1Periph_TIM2,ENABLE);
     RCC_APB1PeriphResetCmd(RCC_APB1Periph_TIM2,DISABLE);
     IC_TIMER_REGISTER->CCER =  0;
@@ -69,9 +73,11 @@ void changeToInput()
     IC_TIMER_REGISTER->INTFR = 0;
     TIM_GenerateEvent(IC_TIMER_REGISTER,TIM_EventSource_Update);
     out_put = 0;
+#endif
 }
 void receiveDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
 
     if(servoPwm == 1){
         MODIFY_REG(IC_TIMER_REGISTER->CCER,(0x3<<(4*IC_TIMER_CHANNEL)),(0x1<<(4*IC_TIMER_CHANNEL)));// setup rising pin trigger.
@@ -89,10 +95,12 @@ void receiveDshotDma()
 
     INPUT_DMA_CHANNEL->CFGR  |= (0x1<<2);
 
+#endif
 }
 
 void sendDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     changeToOutput();
 
     INPUT_DMA_CHANNEL->CFGR  = 0x99a;
@@ -104,6 +112,7 @@ void sendDshotDma()
     IC_TIMER_REGISTER->CCER |= (1<<0);
     IC_TIMER_REGISTER->CTLR1  |= (1<<0);
     INPUT_DMA_CHANNEL->CFGR  |= 0x1;
+#endif
 }
 
 uint8_t getInputPinState()
@@ -158,4 +167,19 @@ void setInputPullNone()
     #error you have to make the setInputPullNone() function available.
 }
 
+#endif
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+void slowDshotInitPin(void)
+{
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);
+    GPIO_InitTypeDef gpio = {0};
+    gpio.GPIO_Pin = INPUT_PIN;
+    gpio.GPIO_Mode = GPIO_Mode_IPD;
+    GPIO_Init(INPUT_PIN_PORT, &gpio);
+}
+uint8_t slowDshotReadPin(void)
+{
+    return (INPUT_PIN_PORT->INDR & INPUT_PIN) != 0;
+}
 #endif

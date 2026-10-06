@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
@@ -202,7 +203,14 @@ update_interupt++;
 
     if (LL_TIM_IsActiveFlag_UPDATE(TIM2) == 1) {
         LL_TIM_ClearFlag_UPDATE(TIM2);
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+        slowDshotSamplePin();
+        if (slowDshotControlTick()) {
+            tenKhzRoutine();
+        }
+#else
         tenKhzRoutine();
+#endif
         update_interupt++;
     }
 
@@ -252,7 +260,14 @@ void TIM16_IRQHandler(void)
 #else
     if (LL_TIM_IsActiveFlag_UPDATE(TIM16) == 1) {
         LL_TIM_ClearFlag_UPDATE(TIM16);
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+        slowDshotSamplePin();
+        if (slowDshotControlTick()) {
+            tenKhzRoutine();
+        }
+#else
         tenKhzRoutine();
+#endif
     }
 #endif
 }

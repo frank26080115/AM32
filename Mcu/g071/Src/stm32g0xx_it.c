@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
@@ -330,7 +331,14 @@ void TIM6_DAC_LPTIM1_IRQHandler(void)
     /* USER CODE BEGIN TIM6_DAC_LPTIM1_IRQn 0 */
     if (LL_TIM_IsActiveFlag_UPDATE(TIM6) == 1) {
         LL_TIM_ClearFlag_UPDATE(TIM6);
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+        slowDshotSamplePin();
+        if (slowDshotControlTick()) {
+            tenKhzRoutine();
+        }
+#else
         tenKhzRoutine();
+#endif
     }
     /* USER CODE END TIM6_DAC_LPTIM1_IRQn 0 */
 

@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /*
  * IO.c
  *
@@ -22,6 +23,7 @@ uint16_t change_time = 0;
 
 void receiveDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     #ifdef USE_TIMER_2_CHANNEL_0
     RCU_REG_VAL(RCU_TIMER2RST) |= BIT(RCU_BIT_POS(RCU_TIMER2RST));
     RCU_REG_VAL(RCU_TIMER2RST) &= ~BIT(RCU_BIT_POS(RCU_TIMER2RST));
@@ -44,10 +46,12 @@ void receiveDshotDma()
     TIMER_CHCTL2(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CCX_ENABLE;
     TIMER_CTL0(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CTL0_CEN;
     DMA_CHCTL(INPUT_DMA_CHANNEL) = 0x0000098b; // just set the whole reg in one go to enable
+#endif
 }
 
 void sendDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     #ifdef USE_TIMER_2_CHANNEL_0
     RCU_REG_VAL(RCU_TIMER2RST) |= BIT(RCU_BIT_POS(RCU_TIMER2RST));
     RCU_REG_VAL(RCU_TIMER2RST) &= ~BIT(RCU_BIT_POS(RCU_TIMER2RST));
@@ -70,6 +74,7 @@ void sendDshotDma()
     TIMER_CHCTL2(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CCX_ENABLE;
     TIMER_CCHP(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CCHP_POEN;
     TIMER_CTL0(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CTL0_CEN;
+#endif
 }
 
 uint8_t getInputPinState() { return GPIO_ISTAT(INPUT_PIN_PORT) & (INPUT_PIN); }
@@ -94,3 +99,17 @@ void setInputPullNone()
 {
     gpio_mode_set(INPUT_PIN_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, INPUT_PIN);
 }
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+void slowDshotInitPin(void)
+{
+    rcu_periph_clock_enable(RCU_GPIOA);
+    rcu_periph_clock_enable(RCU_GPIOB);
+    gpio_mode_set(INPUT_PIN_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, INPUT_PIN);
+}
+
+uint8_t slowDshotReadPin(void)
+{
+    return (GPIO_ISTAT(INPUT_PIN_PORT) & INPUT_PIN) != 0;
+}
+#endif

@@ -117,6 +117,8 @@ void computeServoInput()
 
 void transfercomplete()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
+
 #ifndef MCU_F031   // f031 does not use software EXTI event to process dshot
     if (armed && dshot_telemetry) {
         if (out_put) {
@@ -196,6 +198,8 @@ void transfercomplete()
             }
         }
     }
+
+#endif
 }
 
 void checkDshot()
@@ -238,6 +242,8 @@ void checkServo()
 
 void detectInput()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
+
     smallestnumber = 20000;
     average_signal_pulse = 0;
     int lastnumber = dma_buffer[0];
@@ -263,4 +269,6 @@ void detectInput()
         checkDshot();
         checkServo();
     }
+
+#endif
 }

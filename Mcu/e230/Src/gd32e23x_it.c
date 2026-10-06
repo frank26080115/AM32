@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 #include <stdint.h>
 
 extern void transfercomplete();
@@ -137,7 +138,14 @@ void ADC_CMP_IRQHandler(void)
 void TIMER13_IRQHandler(void)
 {
     timer_interrupt_flag_clear(TIMER13, TIMER_INT_FLAG_UP);
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotSamplePin();
+    if (slowDshotControlTick()) {
+        tenKhzRoutine();
+    }
+#else
     tenKhzRoutine();
+#endif
 }
 
 /**

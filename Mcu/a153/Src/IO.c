@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /*
  * IO.c
  *
@@ -17,6 +18,7 @@ volatile char sync_dshot = 0;
 
 void receiveDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
 	//Set output variable for state machine
 	out_put = 0;
 
@@ -83,10 +85,12 @@ void receiveDshotDma()
 
 	//Enable clearing the timer when capture event occurs
 	modifyReg32(&CTIMER0->CTCR, CTIMER_CTCR_ENCC_MASK, CTIMER_CTCR_ENCC(1));
+#endif
 }
 
 void sendDshotDma()
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
 	//Set output variable for state machine
 	out_put = 1;
 
@@ -117,6 +121,7 @@ void sendDshotDma()
 
 	//Send GCR data to LPSPI FIFO
 	LPSPI0->TDR = gcrnumber;
+#endif
 }
 
 uint8_t getInputPinState()
@@ -159,3 +164,18 @@ void setInputPullNone()
 	//Disable internal pull resistor
 	modifyReg32(&INPUT_PIN_PORT->PCR[INPUT_PIN], PORT_PCR_PE_MASK, 0);
 }
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+void slowDshotInitPin(void)
+{
+    modifyReg32(&INPUT_PIN_PORT->PCR[INPUT_PIN],
+        PORT_PCR_MUX_MASK | PORT_PCR_IBE_MASK | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK,
+        PORT_PCR_MUX(0) | PORT_PCR_IBE(1) | PORT_PCR_PE(1));
+    INPUT_PIN_GPIO->PDDR &= ~(1UL << INPUT_PIN);
+}
+
+uint8_t slowDshotReadPin(void)
+{
+    return INPUT_PIN_GPIO->PDR[INPUT_PIN] != 0;
+}
+#endif

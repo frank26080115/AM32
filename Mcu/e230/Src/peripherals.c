@@ -8,6 +8,7 @@
 // PERIPHERAL SETUP
 
 #include "peripherals.h"
+#include "dshot_slow.h"
 
 #include "ADC.h"
 #include "common.h"
@@ -43,6 +44,11 @@ void initCorePeripherals(void)
 #endif
 #ifdef USE_SERIAL_TELEMETRY
     telem_UART_Init();
+#endif
+
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotInitPin();
+    slowDshotInitTimer();
 #endif
 }
 
@@ -251,6 +257,7 @@ void MX_GPIO_Init(void) { }
 
 void UN_TIM_Init(void)
 {
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     rcu_periph_clock_enable(RCU_GPIOA);
     rcu_periph_clock_enable(RCU_GPIOB);
     rcu_periph_clock_enable(RCU_DMA);
@@ -304,6 +311,7 @@ void UN_TIM_Init(void)
     timer_enable(IC_TIMER_REGISTER);
 
     gpio_mode_set(INPUT_PIN_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, INPUT_PIN);
+#endif
 }
 
 #ifdef USE_RGB_LED // has 3 color led
@@ -413,15 +421,15 @@ void enableCorePeripherals()
     cmp_enable();
     delayMicros(1000);
 
-#ifdef USE_ADC_INPUT
-
-#else
+#if !defined(USE_ADC_INPUT) && !defined(SPECIAL_BUILD_SLOW_DSHOT)
     timer_channel_output_state_config(IC_TIMER_REGISTER, IC_TIMER_CHANNEL,
         TIMER_CCX_ENABLE);
     TIMER_CTL0(IC_TIMER_REGISTER) |= (uint32_t)TIMER_CTL0_CEN; // enable counter
 #endif
+#ifndef SPECIAL_BUILD_SLOW_DSHOT
     rcu_periph_clock_disable(RCU_GPIOB);
     rcu_periph_clock_disable(RCU_DMA);
+#endif
 
     NVIC_SetPriority(EXTI4_15_IRQn, 2);
     NVIC_EnableIRQ(EXTI4_15_IRQn);

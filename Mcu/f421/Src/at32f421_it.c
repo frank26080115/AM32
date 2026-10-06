@@ -1,3 +1,4 @@
+#include "dshot_slow.h"
 /* Includes
  * ------------------------------------------------------------------*/
 #include "at32f421_it.h"
@@ -196,7 +197,14 @@ void ADC1_CMP_IRQHandler(void)
 void TMR14_GLOBAL_IRQHandler(void)
 {
     TMR14->ists = (uint16_t)~TMR_OVF_FLAG;
+#ifdef SPECIAL_BUILD_SLOW_DSHOT
+    slowDshotSamplePin();
+    if (slowDshotControlTick()) {
+        tenKhzRoutine();
+    }
+#else
     tenKhzRoutine();
+#endif
 }
 
 /**
