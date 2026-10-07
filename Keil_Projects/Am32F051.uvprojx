@@ -400,6 +400,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -996,6 +1001,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -1665,6 +1675,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -2330,6 +2345,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -2999,6 +3019,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -3664,6 +3689,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -4333,6 +4363,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -4998,6 +5033,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -5667,6 +5707,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -6332,6 +6377,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -7001,6 +7051,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -7666,6 +7721,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -8335,6 +8395,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -9000,6 +9065,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -9669,6 +9739,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -10334,6 +10409,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -11003,6 +11083,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -11668,6 +11753,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -12337,6 +12427,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -13002,6 +13097,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -13671,6 +13771,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -14336,6 +14441,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -15005,6 +15115,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -15672,6 +15787,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -15949,7 +16069,7 @@
       <TargetName>NEUTRONRC_F051</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6190000::V6.19::ARMCLANG</pCCUsed>
+      <pCCUsed>6210000::V6.21::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -16337,6 +16457,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -17006,6 +17131,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -17602,6 +17732,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -18271,6 +18406,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -18867,6 +19007,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -19467,6 +19612,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -20063,6 +20213,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -20732,6 +20887,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -21397,6 +21557,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>
@@ -22066,6 +22231,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -22733,6 +22903,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>functions.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\functions.c</FilePath>
@@ -23398,6 +23573,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>functions.c</FileName>

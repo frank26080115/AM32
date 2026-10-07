@@ -520,6 +520,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>firmwareversion.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\firmwareversion.c</FilePath>
@@ -1123,6 +1128,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>firmwareversion.c</FileName>
@@ -1730,6 +1740,11 @@
               <FilePath>..\Src\dshot.c</FilePath>
             </File>
             <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
+            </File>
+            <File>
               <FileName>firmwareversion.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\firmwareversion.c</FilePath>
@@ -2333,6 +2348,11 @@
               <FileName>dshot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\dshot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dshot_slow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\dshot_slow.c</FilePath>
             </File>
             <File>
               <FileName>firmwareversion.c</FileName>

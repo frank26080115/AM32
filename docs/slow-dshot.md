@@ -6,9 +6,14 @@ restore the standard input implementation. Configure EEPROM input method to
 **DShot (`DSHOT_IN`, value 1)**. Auto detection, servo input, EDT-arm input and
 bidirectional DShot telemetry are not supported by this special build.
 
-`SLOW_DSHOT_SAMPLE_HZ` defaults to 20000 and can be overridden to 40000 or
-80000, including with a compiler definition. The timer is programmed for the
-exact nominal rate; the existing control routine runs every 1, 2 or 4 sampling
+Choose one of exactly three `SLOW_DSHOT_MODE` options in `Inc/dshot_slow.h`:
+`SLOW_DSHOT_MODE_DSHOT4` (default), `SLOW_DSHOT_MODE_DSHOT8`, or
+`SLOW_DSHOT_MODE_DSHOT16`. Match the ELRS output mode. Compiler definitions
+may also select a mode, for example `-DSLOW_DSHOT_MODE=SLOW_DSHOT_MODE_DSHOT8`.
+`SLOW_DSHOT_SAMPLE_HZ` is derived automatically as 20000, 40000, or 80000;
+do not configure it directly. The special-build timer is programmed for these
+exact rates; the original nominal 20 kHz timer ran at 19,607.843 Hz.
+The existing control routine runs every 1, 2 or 4 sampling
 interrupts respectively. Targets with a lower configured control rate retain
 that rate through an integer divider. Standard builds retain their original
 timer settings.
@@ -22,24 +27,32 @@ timer settings.
 For ESP32 RMT, transmit ordinary, non-inverted DShot bits MSB first, with the
 usual 12-bit payload and four-bit XOR checksum. Only pulse timing changes.
 Start with a constant bit period of five sampling intervals, a zero high time
-of 37.5% of the bit period and a one high time of 75%:
+of 30% of the bit period and a one high time of 70%:
 
 | Sampling | Zero high / low | One high / low |
 |---|---|---|
-| 20 kHz | 93.75 / 156.25 us | 187.5 / 62.5 us |
-| 40 kHz | 46.875 / 78.125 us | 93.75 / 31.25 us |
-| 80 kHz | 23.4375 / 39.0625 us | 46.875 / 15.625 us |
+| 20 kHz | 75 / 175 us | 175 / 75 us |
+| 40 kHz | 37.5 / 87.5 us | 87.5 / 37.5 us |
+| 80 kHz | 18.75 / 43.75 us | 43.75 / 18.75 us |
 
 Choose an RMT tick that represents these timings sufficiently accurately.
 Allow at least five observed low samples before the first packet and after
 errors; six sampling intervals of low time provide margin for asynchronous
 sampling. Consecutive CRC-valid packets need no extra idle gap. Match the
-transmitter bit period to the receiver's actual clock; both oscillators have
-tolerance, and phase drift across a packet reduces the sampling margin.
+transmitter bit period to the receiver's actual clock. Each bit may include
+one extra low sample, so five or six samples per bit are accepted. The sampler
+resynchronizes on each bit's rising edge instead of accumulating phase drift
+across the packet. The table above uses five-sample bit periods; an optional
+sixth sample extends only the low tail.
 
 The accepted sample groups are `10000`, `11000`, `11100`, and `11110`.
 The first two encode zero and the latter two encode one. A low first sample,
 high fifth sample or a second high pulse within a bit rejects the packet.
+After sample five, the next sample starts the following bit if high. If low,
+it is accepted as sample six, and the following sample must start the next bit
+high. A second extra low rejects an incomplete packet. After the sixteenth bit
+passes CRC, the sampler immediately waits for the next packet's rising edge
+without requiring either the optional sixth sample or an idle gap.
 The sampler writes synthetic edge timestamps into `dma_buffer` and calls the
 existing `computeDshotDMA()` for checksum, throttle and command processing.
 Only CRC-valid packets reset the signal timeout and establish input validity.

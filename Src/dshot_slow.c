@@ -4,7 +4,7 @@
 
 #ifdef SPECIAL_BUILD_SLOW_DSHOT
 
-enum sample_state { WAIT_IDLE, WAIT_EDGE, RECEIVE_BITS };
+enum sample_state { WAIT_IDLE, WAIT_EDGE, RECEIVE_BITS, WAIT_NEXT_BIT };
 static enum sample_state state;
 static uint8_t enabled;
 static uint8_t low_samples;
@@ -53,6 +53,13 @@ static void rejectPacket(void)
     state = WAIT_IDLE;
 }
 
+static void beginBit(void)
+{
+    state = RECEIVE_BITS;
+    sample_index = high_samples = 1; // Rising edge is sample one.
+    saw_low = 0;
+}
+
 void slowDshotSamplePin(void)
 {
     if (!enabled) {
@@ -71,20 +78,18 @@ void slowDshotSamplePin(void)
         }
     } else if (state == WAIT_EDGE) {
         if (high && !previous_high) {
-            state = RECEIVE_BITS;
             bit_index = 0;
-            sample_index = high_samples = 1; // Rising edge is sample one.
-            saw_low = 0;
+            beginBit();
+        }
+    } else if (state == WAIT_NEXT_BIT) {
+        if (high) {
+            beginBit(); // Resynchronize every bit after its mandatory low sample.
+        } else if (sample_index == 0) {
+            sample_index = 1; // Allow one extra low: this bit lasts six samples.
+        } else {
+            rejectPacket(); // A seventh low sample cannot belong to this bit.
         }
     } else {
-        if (sample_index == 0) {
-            high_samples = saw_low = 0;
-            if (!high) { // Every bit must start high.
-                rejectPacket();
-                previous_high = high;
-                return;
-            }
-        }
         if (high) {
             if (saw_low) { // Only a contiguous high prefix is accepted.
                 rejectPacket();
@@ -102,6 +107,7 @@ void slowDshotSamplePin(void)
                 dma_buffer[2 * bit_index] = 5 * bit_index;
                 dma_buffer[2 * bit_index + 1] = 5 * bit_index + high_samples;
                 sample_index = 0;
+                state = WAIT_NEXT_BIT;
                 if (++bit_index == 16) {
                     const uint16_t good_before = dshot_goodcounts;
                     computeDshotDMA(); // Reuse the existing CRC/command/throttle decoder.
