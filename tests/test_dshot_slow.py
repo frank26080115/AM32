@@ -93,12 +93,12 @@ API int tick(void) { return slowDshotControlTick(); }
 API int reload(void) { return fake_timer.ARR; }
 """)
         cls.libraries = []
-        for hz in (20000, 40000, 80000):
+        for hz, mode in ((20000, "DSHOT4"), (40000, "DSHOT8"), (80000, "DSHOT16")):
             library = directory / f"slow_{hz}.dll"
             subprocess.run([
                 "clang", "--target=x86_64-pc-windows-msvc", "-fuse-ld=lld",
                 "-shared", "-nostdlib", "-O2", "-Wl,/noentry",
-                f"-DSLOW_DSHOT_SAMPLE_HZ={hz}", f"-I{directory}",
+                f"-DSLOW_DSHOT_MODE=SLOW_DSHOT_MODE_{mode}", f"-I{directory}",
                 str(ROOT / "Src/dshot_slow.c"), str(ROOT / "Src/dshot.c"),
                 str(directory / "harness.c"), "-o", str(library),
             ], check=True, capture_output=True, text=True)
@@ -122,10 +122,45 @@ API int reload(void) { return fake_timer.ARR; }
         for high in samples:
             library.sample(high)
 
-    def frame(self, library, word, widths=(2, 4)):
+    def frame(self, library, word, widths=(2, 4), extra_lows=None):
         for bit in range(15, -1, -1):
             width = widths[(word >> bit) & 1]
             self.feed(library, [1] * width + [0] * (5 - width))
+            if extra_lows is not None and extra_lows[15 - bit]:
+                self.feed(library, [0])
+
+    def test_five_six_and_mixed_length_bits(self):
+        for _, library in self.libraries:
+            for widths in itertools.product((1, 2), (3, 4)):
+                for extra_lows in ([0] * 16, [1] * 16, [0, 1] * 8, [1, 0] * 8):
+                    library.reset(1)
+                    self.feed(library, [0] * 5)
+                    for value in (0, 48, 1000, 2047, 0):
+                        self.frame(library, self.packet(value), widths, extra_lows)
+                        self.assertEqual(library.value(), value)
+                    self.assertEqual(library.good(), 5)
+                    self.assertEqual(library.bad(), 0)
+
+    def test_transmitter_phase_and_original_255us_period(self):
+        # Time is measured in receiver sample intervals. Both the new 250 us
+        # sender (5 intervals) and original 255 us sender (5.1) must decode.
+        for _, library in self.libraries:
+            for period in (5, 5.1):
+                for phase_index in range(100):
+                    phase = phase_index / 100
+                    for value in (0, 48, 1000, 2047):
+                        library.reset(1)
+                        self.feed(library, [0] * 5)
+                        word = self.packet(value)
+                        tick = 0
+                        while phase + tick < 16 * period:
+                            bit = int((phase + tick) / period)
+                            high_time = period * (0.7 if (word >> (15 - bit)) & 1 else 0.3)
+                            self.feed(library, [phase + tick - bit * period < high_time])
+                            tick += 1
+                        self.assertEqual(library.good(), 1, (period, phase, value))
+                        self.assertEqual(library.bad(), 0, (period, phase, value))
+                        self.assertEqual(library.value(), value)
 
     def test_throttle_all_widths_and_back_to_back(self):
         for _, library in self.libraries:
@@ -165,10 +200,17 @@ API int reload(void) { return fake_timer.ARR; }
                 self.feed(library, [0] * 5)
                 self.frame(library, self.packet(1000))
                 self.assertEqual(library.good(), 1)
-            # Second bit has a low first sample.
+            # One extra low is allowed; a second extra low rejects the packet.
             library.reset(1)
             self.feed(library, [0] * 5 + [1, 1, 0, 0, 0] + [0])
+            self.assertEqual(library.bad(), 0)
+            self.feed(library, [0])
             self.assertEqual(library.bad(), 1)
+            self.assertEqual(library.ready(), 0)
+            self.assertEqual(library.timeout(), 123)
+            self.feed(library, [0] * 5)
+            self.frame(library, self.packet(1000))
+            self.assertEqual(library.good(), 1)
 
     def test_requires_explicit_eeprom_dshot(self):
         for _, library in self.libraries:

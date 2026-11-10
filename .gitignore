@@ -20,4 +20,5 @@ Keil_Projects/Listings
 *.launch
 /Debug/
 windows-tools.zip
+__pycache__/
 .settings/

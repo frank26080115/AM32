@@ -1,0 +1,10 @@
+{
+  "name": "white-baseline",
+  "description": "Original stationary Gaussian model, with motor interference disabled. Tune background RMS and receiver filtering first.",
+  "background_rms_v": 1.0,
+  "startup": {"at_s": 0.25, "peak_multiplier": 1.0, "decay_ms": 50.0},
+  "motor": {"electrical_hz": 0.0, "spinup_s": 0.0, "modulation_depth": 0.0},
+  "switching": {"pwm_hz": 0.0, "duty": 0.5, "spike_peak_v": 0.0, "spike_width_us": 1.0, "ring_peak_v": 0.0, "ring_hz": 200000.0, "ring_decay_us": 3.0},
+  "ground_shift": {"startup_v": 0.0, "steady_v": 0.0, "decay_ms": 20.0},
+  "simulation": {"step_us": 1.0}
+}

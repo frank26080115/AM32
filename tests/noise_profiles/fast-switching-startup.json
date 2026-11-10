@@ -1,0 +1,10 @@
+{
+  "name": "fast-switching-startup",
+  "description": "Weapon-startup profile at 48 kHz PWM. Tune PWM frequency and duty to investigate switching repetition and overlap.",
+  "background_rms_v": 0.1,
+  "startup": {"at_s": 0.25, "peak_multiplier": 4.0, "decay_ms": 50.0},
+  "motor": {"electrical_hz": 1000.0, "spinup_s": 0.5, "modulation_depth": 0.5},
+  "switching": {"pwm_hz": 48000.0, "duty": 0.5, "spike_peak_v": 0.5, "spike_width_us": 1.0, "ring_peak_v": 0.25, "ring_hz": 200000.0, "ring_decay_us": 3.0},
+  "ground_shift": {"startup_v": 0.8, "steady_v": 0.05, "decay_ms": 20.0},
+  "simulation": {"step_us": 0.1}
+}
